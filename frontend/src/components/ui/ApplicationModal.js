@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/store/useAuthStore';
-import { submitJobApplication } from '@/services/mockApi';
+import API from '@/services/api';
+import authService from '@/services/authService';
 import { X, Upload, FileText, CheckCircle, AlertCircle, User, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function ApplicationModal({ job, isOpen, onClose, onSuccess }) {
-  const { user } = useAuth();
+  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -20,16 +20,25 @@ export default function ApplicationModal({ job, isOpen, onClose, onSuccess }) {
   const [success, setSuccess] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  // Initialize form with user data when modal opens
+  // Initialize auth and form data when modal opens
+  useEffect(() => {
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setUser(authService.getCurrentUser());
+    };
+    initAuth();
+  }, []);
+
   useEffect(() => {
     if (isOpen && user) {
+      const fullName = authService.getFullName();
       setFormData({
-        fullName: user.name || '',
+        fullName: fullName || '',
         email: user.email || '',
-        phone: user.profile?.phone || '',
-        location: user.profile?.location || '',
-        coverLetter: `Dear Hiring Manager,\n\nI am excited to apply for the ${job.title} position at ${job.company}. With my background in ${user.profile?.title || 'the relevant field'}, I believe I would be a valuable addition to your team.\n\nBest regards,\n${user.name}`,
-        resume: user.profile?.resume || null
+        phone: user.phone || '',
+        location: user.location_city || '',
+        coverLetter: `Dear Hiring Manager,\n\nI am excited to apply for the ${job.title} position at ${job.company_name || job.company}. With my background in ${user.skills?.join(', ') || 'the relevant field'}, I believe I would be a valuable addition to your team.\n\nBest regards,\n${fullName}`,
+        resume: user.resume || null
       });
       setError(null);
       setSuccess(false);
@@ -110,12 +119,12 @@ export default function ApplicationModal({ job, isOpen, onClose, onSuccess }) {
         resume: formData.resume
       };
 
-      const response = await submitJobApplication(job.id, applicationData);
+      const response = await API.jobs.apply(job.id, applicationData);
       
       if (response.success) {
         setSuccess(true);
         setTimeout(() => {
-          onSuccess(response.applicationId);
+          onSuccess(response.applicationId || response.id);
         }, 2000);
       } else {
         setError('Failed to submit application. Please try again.');

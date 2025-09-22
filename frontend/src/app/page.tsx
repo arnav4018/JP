@@ -5,15 +5,17 @@ import Image from 'next/image';
 import MainLayout from '@/components/layout/MainLayout';
 import SearchBar from '@/components/ui/SearchBar';
 import JobCard from '@/components/ui/JobCard';
-import { fetchJobs, fetchPersonalizedJobs } from '@/services/mockApi';
+import API from '@/services/api';
 import { TrendingUp, Users, Building, Star, Briefcase, User, Heart, Sparkles, Zap, Rocket } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useJobStore } from '@/store/useJobStore';
-import { useAuth } from '@/store/useAuthStore';
+import authService from '@/services/authService';
 import '@/styles/homepage-animations.css';
 
 export default function Home() {
-  const { isAuthenticated, getUserId, user } = useAuth();
+  // Authentication state will be handled differently with the new auth service
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
   const [personalizedJobs, setPersonalizedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,11 +53,21 @@ export default function Home() {
     alt: 'Professional office scene with modern design'
   };
 
+  // Initialize authentication state
+  useEffect(() => {
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setIsAuthenticated(authService.isAuthenticated());
+      setUser(authService.getCurrentUser());
+    };
+    initAuth();
+  }, []);
+
   useEffect(() => {
     // Load featured jobs (limit to first 6)
     const loadFeaturedJobs = async () => {
       try {
-        const response = await fetchJobs({ limit: 6 });
+        const response = await API.jobs.getAll({ limit: 6 });
         setFeaturedJobs(response.jobs);
       } catch (error) {
         console.error('Failed to load featured jobs:', error);
@@ -81,12 +93,13 @@ export default function Home() {
   useEffect(() => {
     if (isAuthenticated) {
       const loadPersonalizedJobs = async () => {
-        const userId = getUserId();
+        const userId = authService.getUserId();
         if (!userId) return;
 
         setPersonalizedLoading(true);
         try {
-          const response = await fetchPersonalizedJobs(userId, 6);
+          // For now, we'll fetch regular jobs as personalization needs user data integration
+          const response = await API.jobs.getAll({ limit: 6 });
           setPersonalizedJobs(response.jobs);
         } catch (error) {
           console.error('Failed to load personalized jobs:', error);
@@ -99,7 +112,7 @@ export default function Home() {
     } else {
       setPersonalizedJobs([]);
     }
-  }, [isAuthenticated, getUserId]);
+  }, [isAuthenticated]);
 
   // Save search to cookies when user performs a search
   useEffect(() => {

@@ -1,4 +1,8 @@
-// Mock API service for job portal development
+// ⚠️ DEPRECATED: This file has been replaced by real API services
+// Use @/services/api instead for all API calls
+// This file is kept for reference only
+
+// Legacy Mock API service for job portal development
 // This simulates backend API responses while the backend is being developed
 
 export const mockJobs = [

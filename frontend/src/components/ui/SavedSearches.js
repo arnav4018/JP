@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/store/useAuthStore';
-import { fetchSavedSearches, deleteSavedSearch, toggleSearchAlert } from '@/services/mockApi';
+import API from '@/services/api';
+import authService from '@/services/authService';
 import { 
   Search, 
   Bell, 
@@ -21,24 +21,36 @@ import {
 import Link from 'next/link';
 
 export default function SavedSearches() {
-  const { getUserId } = useAuth();
   const [savedSearches, setSavedSearches] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadSavedSearches();
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setUser(authService.getCurrentUser());
+    };
+    initAuth();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      loadSavedSearches();
+    }
+  }, [user]);
+
   const loadSavedSearches = async () => {
-    const userId = getUserId();
+    const userId = authService.getUserId();
     if (!userId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const searches = await fetchSavedSearches(userId);
+      // Note: Saved searches functionality would need to be implemented in backend
+      // For now, we'll use an empty array as placeholder
+      const searches = [];
       setSavedSearches(searches);
     } catch (err) {
       setError('Failed to load saved searches');
@@ -54,12 +66,9 @@ export default function SavedSearches() {
     }
 
     try {
-      const response = await deleteSavedSearch(searchId);
-      if (response.success) {
-        setSavedSearches(prev => prev.filter(search => search.id !== searchId));
-      } else {
-        alert('Failed to delete search. Please try again.');
-      }
+      // Note: Delete saved search functionality would need to be implemented in backend
+      // For now, we'll just remove it from local state
+      setSavedSearches(prev => prev.filter(search => search.id !== searchId));
     } catch (error) {
       console.error('Error deleting search:', error);
       alert('Failed to delete search. Please try again.');
@@ -68,18 +77,15 @@ export default function SavedSearches() {
 
   const handleToggleAlert = async (searchId, enabled) => {
     try {
-      const response = await toggleSearchAlert(searchId, enabled);
-      if (response.success) {
-        setSavedSearches(prev => 
-          prev.map(search => 
-            search.id === searchId 
-              ? { ...search, alertEnabled: enabled }
-              : search
-          )
-        );
-      } else {
-        alert('Failed to update alert settings. Please try again.');
-      }
+      // Note: Toggle alert functionality would need to be implemented in backend
+      // For now, we'll just update local state
+      setSavedSearches(prev => 
+        prev.map(search => 
+          search.id === searchId 
+            ? { ...search, alertEnabled: enabled }
+            : search
+        )
+      );
     } catch (error) {
       console.error('Error updating alert:', error);
       alert('Failed to update alert settings. Please try again.');

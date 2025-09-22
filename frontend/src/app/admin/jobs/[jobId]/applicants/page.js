@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/store/useAuthStore';
-import { fetchJobApplicants, updateApplicantStatus } from '@/services/mockApi';
+import API from '@/services/api';
+import authService from '@/services/authService';
 import {
   ArrowLeft,
   Search,
@@ -38,7 +38,8 @@ const ApplicationStatus = {
 export default function JobApplicantsPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   
   const [applicants, setApplicants] = useState([]);
   const [jobDetails, setJobDetails] = useState(null);
@@ -51,13 +52,24 @@ export default function JobApplicantsPage() {
   const [selectedApplicants, setSelectedApplicants] = useState([]);
 
   useEffect(() => {
-    // Check authentication and permissions
-    if (!isAuthenticated || user?.role !== 'admin') {
-      router.push('/login');
-      return;
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setIsAuthenticated(authService.isAuthenticated());
+      setUser(authService.getCurrentUser());
+      
+      // Check authentication and permissions
+      if (!authService.isAuthenticated() || !authService.isAdmin()) {
+        router.push('/login');
+        return;
+      }
+    };
+    initAuth();
+  }, [router]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadApplicants();
     }
-    
-    loadApplicants();
   }, [isAuthenticated, user, params.jobId, sortBy, sortOrder]);
 
   const loadApplicants = async () => {
@@ -67,9 +79,11 @@ export default function JobApplicantsPage() {
     setError(null);
 
     try {
-      const response = await fetchJobApplicants(params.jobId, sortBy, sortOrder);
-      setApplicants(response.applicants);
-      setJobDetails(response.jobDetails);
+      const response = await API.jobs.getApplications(params.jobId);
+      setApplicants(response.applicants || response);
+      // Get job details separately
+      const jobData = await API.jobs.getById(params.jobId);
+      setJobDetails(jobData);
     } catch (err) {
       setError('Failed to load applicants');
       console.error('Error loading applicants:', err);
@@ -80,7 +94,7 @@ export default function JobApplicantsPage() {
 
   const handleStatusUpdate = async (applicantId, newStatus) => {
     try {
-      await updateApplicantStatus(applicantId, newStatus);
+      await API.applications.updateStatus(params.jobId, applicantId, newStatus);
       // Update local state
       setApplicants(prev => 
         prev.map(applicant => 

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { fetchJobById, checkApplicationStatus } from '@/services/mockApi';
-import { useAuth } from '@/store/useAuthStore';
+import API from '@/services/api';
+import authService from '@/services/authService';
 import { 
   MapPin, 
   Clock, 
@@ -25,13 +25,24 @@ import ApplicationModal from '@/components/ui/ApplicationModal';
 export default function JobDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated, getUserId } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+
+  // Initialize auth
+  useEffect(() => {
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setIsAuthenticated(authService.isAuthenticated());
+      setUser(authService.getCurrentUser());
+    };
+    initAuth();
+  }, []);
 
   useEffect(() => {
     const loadJobData = async () => {
@@ -42,15 +53,16 @@ export default function JobDetailsPage() {
 
       try {
         // Fetch job details
-        const jobData = await fetchJobById(params.jobId);
+        const jobData = await API.jobs.getById(params.jobId);
         setJob(jobData);
 
         // Check if user has applied (only if authenticated)
-        if (isAuthenticated) {
-          const userId = getUserId();
+        if (isAuthenticated && user) {
+          const userId = authService.getUserId();
           if (userId) {
-            const appStatus = await checkApplicationStatus(userId, parseInt(params.jobId));
-            setApplicationStatus(appStatus);
+            // Note: Application status check would need backend implementation
+            // For now, we'll set it to null
+            setApplicationStatus(null);
           }
         }
       } catch (err) {
@@ -62,7 +74,7 @@ export default function JobDetailsPage() {
     };
 
     loadJobData();
-  }, [params.jobId, isAuthenticated, getUserId]);
+  }, [params.jobId, isAuthenticated, user]);
 
   const formatPostedDate = (dateString) => {
     const date = new Date(dateString);

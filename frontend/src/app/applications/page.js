@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { fetchUserApplications } from '@/services/mockApi';
-import { useAuth } from '@/store/useAuthStore';
+import API from '@/services/api';
+import authService from '@/services/authService';
 import { 
   Calendar,
   MapPin,
@@ -68,7 +68,8 @@ const ApplicationStatus = {
 
 export default function ApplicationsPage() {
   const router = useRouter();
-  const { isAuthenticated, getUserId, loading: authLoading } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,25 +77,34 @@ export default function ApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login?redirect=' + encodeURIComponent('/applications'));
-      return;
-    }
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setIsAuthenticated(authService.isAuthenticated());
+      setUser(authService.getCurrentUser());
+      
+      if (!authService.isAuthenticated()) {
+        router.push('/login?redirect=' + encodeURIComponent('/applications'));
+        return;
+      }
+    };
+    initAuth();
+  }, [router]);
 
-    if (isAuthenticated) {
+  useEffect(() => {
+    if (isAuthenticated && user) {
       loadApplications();
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, user]);
 
   const loadApplications = async () => {
-    const userId = getUserId();
+    const userId = authService.getUserId();
     if (!userId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const userApplications = await fetchUserApplications(userId);
+      const userApplications = await API.applications.getMy();
       setApplications(userApplications);
     } catch (err) {
       setError('Failed to load applications');

@@ -6,14 +6,14 @@ import SearchBar from '@/components/ui/SearchBar';
 import JobCard from '@/components/ui/JobCard';
 import FilterSidebar from '@/components/ui/FilterSidebar';
 import SortDropdown from '@/components/ui/SortDropdown';
-import { fetchJobs } from '@/services/mockApi';
+import API from '@/services/api';
+import authService from '@/services/authService';
 import { useJobStore } from '@/store/useJobStore';
 import { Filter, X, ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 import SaveSearchModal from '@/components/ui/SaveSearchModal';
-import { useAuth } from '@/store/useAuthStore';
 
 export default function JobsPage() {
-  const { isAuthenticated } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
   const {
@@ -32,6 +32,15 @@ export default function JobsPage() {
     clearFilters
   } = useJobStore();
 
+  // Initialize authentication
+  useEffect(() => {
+    const initAuth = async () => {
+      await authService.waitForInitialization();
+      setIsAuthenticated(authService.isAuthenticated());
+    };
+    initAuth();
+  }, []);
+
   // Load jobs when filters change
   useEffect(() => {
     const loadJobs = async () => {
@@ -40,7 +49,7 @@ export default function JobsPage() {
       
       try {
         const filters = getFilters();
-        const response = await fetchJobs({
+        const response = await API.jobs.getAll({
           ...filters,
           page: currentPage,
           limit: 10

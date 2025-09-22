@@ -1,5 +1,8 @@
 'use client';
 
+// ⚠️ DEPRECATED: This store is being replaced by authService
+// Use @/services/authService instead for new components
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { mockAuth } from '@/services/mockApi';
