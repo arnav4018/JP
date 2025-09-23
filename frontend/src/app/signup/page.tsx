@@ -94,7 +94,7 @@ export default function SignupPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-panel)', color: 'var(--text-primary)', focusRingColor: 'var(--accent-interactive)', focusBorderColor: 'var(--accent-interactive)' }}
+                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-panel)', color: 'var(--text-primary)' }}
                   />
                 </div>
                 <div>
@@ -109,7 +109,7 @@ export default function SignupPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-panel)', color: 'var(--text-primary)', focusRingColor: 'var(--accent-interactive)', focusBorderColor: 'var(--accent-interactive)' }}
+                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-panel)', color: 'var(--text-primary)' }}
                   />
                 </div>
               </div>

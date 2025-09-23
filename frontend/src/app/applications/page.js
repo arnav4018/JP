@@ -72,19 +72,24 @@ export default function ApplicationsPage() {
   const [user, setUser] = useState(null);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all, pending, shortlisted, rejected
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const initAuth = async () => {
-      await authService.waitForInitialization();
-      setIsAuthenticated(authService.isAuthenticated());
-      setUser(authService.getCurrentUser());
-      
-      if (!authService.isAuthenticated()) {
-        router.push('/login?redirect=' + encodeURIComponent('/applications'));
-        return;
+      try {
+        await authService.waitForInitialization();
+        setIsAuthenticated(authService.isAuthenticated());
+        setUser(authService.getCurrentUser());
+        
+        if (!authService.isAuthenticated()) {
+          router.push('/login?redirect=' + encodeURIComponent('/applications'));
+          return;
+        }
+      } finally {
+        setAuthLoading(false);
       }
     };
     initAuth();

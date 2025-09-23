@@ -540,12 +540,14 @@ export default function Home() {
               className="px-8 py-3 border-2 font-medium rounded-lg transition-all hover:opacity-90"
               style={{ borderColor: 'var(--background-deep)', color: 'var(--background-deep)', backgroundColor: 'transparent' }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'var(--background-deep)';
-                e.target.style.color = 'var(--accent-interactive)';
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = 'var(--background-deep)';
+                target.style.color = 'var(--accent-interactive)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = 'var(--background-deep)';
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = 'transparent';
+                target.style.color = 'var(--background-deep)';
               }}
             >
               Browse Jobs

@@ -20,7 +20,7 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  const formatJoinDate = (dateString) => {
+  const formatJoinDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long'
@@ -299,7 +299,7 @@ export default function ProfilePage() {
                   <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Skills</h3>
                   <div className="flex flex-wrap gap-2">
                     {user.profile?.skills && user.profile.skills.length > 0 ? (
-                      user.profile.skills.map((skill) => (
+                      user.profile.skills.map((skill: string) => (
                         <span
                           key={skill}
                           className="px-3 py-1 text-sm rounded-full"
