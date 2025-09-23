@@ -95,7 +95,7 @@ export default function JobsPage() {
     setShowSaveSearchModal(true);
   };
 
-  const handleSaveSearchSuccess = (savedSearch) => {
+  const handleSaveSearchSuccess = (savedSearch: any) => {
     setShowSaveSearchModal(false);
     // Could add a toast notification here
     console.log('Search saved successfully:', savedSearch);
@@ -345,7 +345,7 @@ export default function JobsPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {jobs.map((job) => (
+                  {jobs.map((job: any) => (
                     <JobCard key={job.id} job={job} />
                   ))}
                 </div>

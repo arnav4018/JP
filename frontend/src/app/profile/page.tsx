@@ -318,8 +318,10 @@ export default function ProfilePage() {
               </div>
             </div>
           ) : (
-            {/* Saved Searches Tab */}
-            <SavedSearches />
+            <>
+              {/* Saved Searches Tab */}
+              <SavedSearches />
+            </>
           )}
         </div>
       </div>

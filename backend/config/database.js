@@ -7,10 +7,14 @@ const pool = new Pool({
     database: process.env.DB_DATABASE,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    // SSL configuration for Supabase (required for hosted PostgreSQL)
+    ssl: process.env.DB_HOST && process.env.DB_HOST.includes('supabase.co') 
+        ? { rejectUnauthorized: false } 
+        : process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     // Connection pool settings
     max: 20, // Maximum number of clients in the pool
     idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+    connectionTimeoutMillis: 5000, // Increased timeout for remote connections
 });
 
 const connectDB = async () => {

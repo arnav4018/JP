@@ -14,7 +14,7 @@ import '@/styles/homepage-animations.css';
 
 export default function Home() {
   // Authentication state will be handled differently with the new auth service
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
   const [personalizedJobs, setPersonalizedJobs] = useState<any[]>([]);
