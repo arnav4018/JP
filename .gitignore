@@ -77,6 +77,11 @@ backend/server.err.log
 backend/tmp/
 backend/storage/
 
+# Database backups (contain sensitive data)
+*.dump
+*.sql.backup
+backend/*_backup.*
+
 # Tests/coverage
 coverage/
 
