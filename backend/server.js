@@ -39,6 +39,9 @@ async function initializeServer() {
         // Initialize Socket.IO service - temporarily disabled
         // const io = socketService.initialize(server);
 
+        // Trust proxy for Render deployment
+        app.set('trust proxy', 1);
+
         // Security middleware
         app.use(helmet());
         app.use(cors({

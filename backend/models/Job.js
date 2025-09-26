@@ -234,5 +234,5 @@ class Job extends BaseModel {
     }
 }
 
-// Export a singleton instance
-module.exports = new Job();
+// Export the class
+module.exports = Job;
