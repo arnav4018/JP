@@ -19,15 +19,21 @@ const register = async (req, res, next) => {
             });
         }
 
-        // Create user
-        const user = await userModel.createUser({
+        // Create user data object, only include phone if provided
+        const userData = {
             firstName,
             lastName,
             email,
             password,
-            role: role || 'candidate',
-            phone
-        });
+            role: role || 'candidate'
+        };
+        
+        if (phone) {
+            userData.phone = phone;
+        }
+
+        // Create user
+        const user = await userModel.createUser(userData);
 
         // Generate tokens
         const token = userModel.generateAuthToken(user);

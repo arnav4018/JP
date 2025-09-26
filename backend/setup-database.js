@@ -15,7 +15,7 @@ async function setupDatabase(closePool = false) {
         
         console.log('📋 Existing tables:', tables);
 
-        // Create users table if it doesn't exist
+        // Create users table if it doesn't exist, or update it if it does
         if (!tables.includes('users')) {
             console.log('🔧 Creating users table...');
             const createUsersTable = `
@@ -26,29 +26,7 @@ async function setupDatabase(closePool = false) {
                     email VARCHAR(255) UNIQUE NOT NULL,
                     password_hash VARCHAR(255) NOT NULL,
                     role VARCHAR(50) DEFAULT 'candidate' CHECK (role IN ('candidate', 'recruiter', 'admin')),
-                    phone VARCHAR(20),
-                    avatar VARCHAR(500),
-                    google_id VARCHAR(255) UNIQUE,
-                    linkedin_id VARCHAR(255) UNIQUE,
-                    is_profile_complete BOOLEAN DEFAULT FALSE,
-                    is_email_verified BOOLEAN DEFAULT FALSE,
-                    email_verification_token VARCHAR(500),
-                    email_verification_expires TIMESTAMP,
-                    password_reset_token VARCHAR(500),
-                    password_reset_expires TIMESTAMP,
                     is_active BOOLEAN DEFAULT TRUE,
-                    last_login TIMESTAMP,
-                    is_online BOOLEAN DEFAULT FALSE,
-                    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    resume TEXT,
-                    skills TEXT[],
-                    experience INTEGER DEFAULT 0,
-                    location_city VARCHAR(255),
-                    location_state VARCHAR(255),
-                    location_country VARCHAR(255),
-                    company_name VARCHAR(255),
-                    company_website VARCHAR(255),
-                    company_size VARCHAR(50),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -62,6 +40,36 @@ async function setupDatabase(closePool = false) {
             console.log('✅ Users table created successfully');
         } else {
             console.log('✅ Users table already exists');
+            
+            // Check and add missing columns if table exists but is incomplete
+            console.log('🔧 Checking for missing columns in users table...');
+            const columnsQuery = `
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' AND table_schema = 'public'
+            `;
+            const columnsResult = await pool.query(columnsQuery);
+            const columns = columnsResult.rows.map(row => row.column_name);
+            
+            const requiredColumns = [
+                { name: 'phone', type: 'VARCHAR(20)' },
+                { name: 'avatar', type: 'VARCHAR(500)' },
+                { name: 'is_profile_complete', type: 'BOOLEAN DEFAULT FALSE' },
+                { name: 'is_email_verified', type: 'BOOLEAN DEFAULT FALSE' },
+                { name: 'last_login', type: 'TIMESTAMP' },
+                { name: 'company_name', type: 'VARCHAR(255)' }
+            ];
+            
+            for (const col of requiredColumns) {
+                if (!columns.includes(col.name)) {
+                    try {
+                        await pool.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.type}`);
+                        console.log(`✅ Added column '${col.name}' to users table`);
+                    } catch (err) {
+                        console.log(`⚠️  Could not add column '${col.name}': ${err.message}`);
+                    }
+                }
+            }
         }
 
         // Check if companies table exists and create if needed
