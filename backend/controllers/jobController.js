@@ -50,20 +50,35 @@ const getJobs = async (req, res, next) => {
         // Initialize Job model instance
         const jobModel = new Job();
 
-        // Get filtered jobs
-        const result = await jobModel.getJobs(filters, options);
+        // Simple query to get all jobs
+        const query = `
+            SELECT j.*, c.name as company_name 
+            FROM jobs j
+            LEFT JOIN companies c ON j.company_id = c.id
+            WHERE j.is_active = true
+            ORDER BY j.created_at DESC
+            LIMIT $1 OFFSET $2
+        `;
+        
+        const countQuery = `SELECT COUNT(*) FROM jobs WHERE is_active = true`;
+        
+        const result = await jobModel.query(query, [options.limit, options.offset]);
+        const countResult = await jobModel.query(countQuery);
+        
+        const jobs = result.rows;
+        const total = parseInt(countResult.rows[0].count);
 
         res.status(200).json({
             success: true,
-            count: result.jobs.length,
+            count: jobs.length,
             pagination: {
                 page: parseInt(page),
-                pages: result.totalPages,
+                pages: Math.ceil(total / parseInt(limit)),
                 limit: parseInt(limit),
-                total: result.total
+                total: total
             },
             data: {
-                jobs: result.jobs
+                jobs: jobs
             }
         });
 
@@ -190,11 +205,8 @@ const getCompanies = async (req, res, next) => {
     try {
         const jobModel = new Job();
         const query = `
-            SELECT DISTINCT c.id, c.name, c.logo_url, c.website, 
-                   COUNT(j.id) as job_count
+            SELECT DISTINCT c.id, c.name, c.logo_url, c.website
             FROM companies c 
-            LEFT JOIN jobs j ON c.id = j.company_id AND j.is_active = true
-            GROUP BY c.id, c.name, c.logo_url, c.website
             ORDER BY c.name
         `;
         
