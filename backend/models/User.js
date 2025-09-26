@@ -27,7 +27,8 @@ class User extends BaseModel {
             last_name: userData.lastName || userData.last_name,
             email: userData.email.toLowerCase(),
             password_hash: userData.password_hash,
-            role: userData.role || 'candidate'
+            role: userData.role || 'candidate',
+            is_active: true
         };
 
         return await this.create(userToCreate);
