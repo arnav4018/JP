@@ -50,10 +50,7 @@ const register = async (req, res, next) => {
                     firstName: user.first_name,
                     lastName: user.last_name,
                     email: user.email,
-                    role: user.role,
-                    avatar: user.avatar,
-                    isEmailVerified: user.is_email_verified,
-                    isProfileComplete: user.is_profile_complete
+                    role: user.role
                 }
             }
         });
@@ -82,13 +79,7 @@ const login = async (req, res, next) => {
             });
         }
 
-        // Check if account is active
-        if (!user.is_active) {
-            return res.status(401).json({
-                success: false,
-                message: 'Account is deactivated. Please contact support.'
-            });
-        }
+        // Note: is_active check removed for basic authentication
 
         // Check password
         const isPasswordMatch = await userModel.comparePassword(password, user.password_hash);
@@ -104,8 +95,7 @@ const login = async (req, res, next) => {
         const token = userModel.generateAuthToken(user);
         const refreshToken = userModel.generateRefreshToken(user);
 
-        // Update last login
-        await userModel.updateProfile(user.id, { last_login: new Date() });
+        // Note: last_login update removed for basic authentication
 
         res.status(200).json({
             success: true,
@@ -118,11 +108,7 @@ const login = async (req, res, next) => {
                     firstName: user.first_name,
                     lastName: user.last_name,
                     email: user.email,
-                    role: user.role,
-                    avatar: user.avatar,
-                    isEmailVerified: user.is_email_verified,
-                    isProfileComplete: user.is_profile_complete,
-                    lastLogin: user.last_login
+                    role: user.role
                 }
             }
         });
