@@ -21,39 +21,14 @@ class User extends BaseModel {
             delete userData.password; // Remove plain password
         }
 
-        // Set default values - only include fields that are provided or required
+        // Set only the essential fields that exist in all versions of the users table
         const userToCreate = {
             first_name: userData.firstName || userData.first_name,
             last_name: userData.lastName || userData.last_name,
             email: userData.email.toLowerCase(),
             password_hash: userData.password_hash,
-            role: userData.role || 'candidate',
-            is_active: userData.isActive !== undefined ? userData.isActive : true
+            role: userData.role || 'candidate'
         };
-        
-        // Add optional fields only if they exist in the userData
-        if (userData.phone) userToCreate.phone = userData.phone;
-        if (userData.avatar) userToCreate.avatar = userData.avatar;
-        if (userData.googleId || userData.google_id) userToCreate.google_id = userData.googleId || userData.google_id;
-        if (userData.linkedinId || userData.linkedin_id) userToCreate.linkedin_id = userData.linkedinId || userData.linkedin_id;
-        if (userData.isProfileComplete !== undefined) userToCreate.is_profile_complete = userData.isProfileComplete;
-        if (userData.isEmailVerified !== undefined) userToCreate.is_email_verified = userData.isEmailVerified;
-        if (userData.emailVerificationToken) userToCreate.email_verification_token = userData.emailVerificationToken;
-        if (userData.emailVerificationExpires) userToCreate.email_verification_expires = userData.emailVerificationExpires;
-        if (userData.passwordResetToken) userToCreate.password_reset_token = userData.passwordResetToken;
-        if (userData.passwordResetExpires) userToCreate.password_reset_expires = userData.passwordResetExpires;
-        if (userData.lastLogin) userToCreate.last_login = userData.lastLogin;
-        if (userData.isOnline !== undefined) userToCreate.is_online = userData.isOnline;
-        if (userData.lastSeen) userToCreate.last_seen = userData.lastSeen;
-        if (userData.resume) userToCreate.resume = userData.resume;
-        if (userData.skills) userToCreate.skills = userData.skills;
-        if (userData.experience !== undefined) userToCreate.experience = userData.experience;
-        if (userData.location?.city || userData.location_city) userToCreate.location_city = userData.location?.city || userData.location_city;
-        if (userData.location?.state || userData.location_state) userToCreate.location_state = userData.location?.state || userData.location_state;
-        if (userData.location?.country || userData.location_country) userToCreate.location_country = userData.location?.country || userData.location_country;
-        if (userData.companyName || userData.company_name) userToCreate.company_name = userData.companyName || userData.company_name;
-        if (userData.companyWebsite || userData.company_website) userToCreate.company_website = userData.companyWebsite || userData.company_website;
-        if (userData.companySize || userData.company_size) userToCreate.company_size = userData.companySize || userData.company_size;
 
         return await this.create(userToCreate);
     }
