@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const { connectDB } = require('./config/database');
+const { setupDatabase } = require('./setup-database');
 const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobs');
 // Temporarily commented out MongoDB-dependent routes:
@@ -35,6 +36,9 @@ async function initializeServer() {
     try {
         // Connect to database
         await connectDB();
+        
+        // Setup database tables if needed
+        await setupDatabase();
         
         // Initialize Socket.IO service - temporarily disabled
         // const io = socketService.initialize(server);

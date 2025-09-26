@@ -1,6 +1,6 @@
 const { pool } = require('./config/database');
 
-async function setupDatabase() {
+async function setupDatabase(closePool = false) {
     try {
         console.log('🔍 Checking database tables...');
 
@@ -109,14 +109,17 @@ async function setupDatabase() {
     } catch (error) {
         console.error('❌ Database setup failed:', error.message);
         console.error(error.stack);
+        throw error; // Re-throw so server initialization fails if DB setup fails
     } finally {
-        await pool.end();
+        if (closePool) {
+            await pool.end();
+        }
     }
 }
 
 // Run setup if called directly
 if (require.main === module) {
-    setupDatabase();
+    setupDatabase(true); // Close pool when running standalone
 }
 
 module.exports = { setupDatabase };
