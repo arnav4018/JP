@@ -10,19 +10,21 @@ require('dotenv').config();
 const { connectDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobs');
-const applicationRoutes = require('./routes/applications');
-const resumeRoutes = require('./routes/resumes');
-const paymentRoutes = require('./routes/paymentRoutes');
-const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
-const referralRoutes = require('./routes/referralRoutes');
-const aiScoringRoutes = require('./routes/aiScoringRoutes');
-const messageRoutes = require('./routes/messageRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const exportRoutes = require('./routes/exportRoutes');
-const socketService = require('./services/socketService');
-const notificationService = require('./services/notificationService');
-const analyticsService = require('./services/analyticsService');
+// Temporarily commented out MongoDB-dependent routes:
+// const applicationRoutes = require('./routes/applications');
+// const resumeRoutes = require('./routes/resumes');
+// const paymentRoutes = require('./routes/paymentRoutes');
+// const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
+// const referralRoutes = require('./routes/referralRoutes');
+// const aiScoringRoutes = require('./routes/aiScoringRoutes');
+// const messageRoutes = require('./routes/messageRoutes');
+// const notificationRoutes = require('./routes/notificationRoutes');
+// const adminRoutes = require('./routes/adminRoutes');
+// const exportRoutes = require('./routes/exportRoutes');
+// Temporarily commented out MongoDB-dependent services
+// const socketService = require('./services/socketService');
+// const notificationService = require('./services/notificationService');
+// const analyticsService = require('./services/analyticsService');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -34,8 +36,8 @@ async function initializeServer() {
         // Connect to database
         await connectDB();
         
-        // Initialize Socket.IO service
-        const io = socketService.initialize(server);
+        // Initialize Socket.IO service - temporarily disabled
+        // const io = socketService.initialize(server);
 
         // Security middleware
         app.use(helmet());
@@ -64,16 +66,17 @@ async function initializeServer() {
         // Routes
         app.use('/api/auth', authRoutes);
         app.use('/api/jobs', jobRoutes);
-        app.use('/api/applications', applicationRoutes);
-        app.use('/api/resumes', resumeRoutes);
-        app.use('/api/payments', paymentRoutes);
-        app.use('/api/settings', systemSettingsRoutes);
-        app.use('/api/referrals', referralRoutes);
-        app.use('/api/ai-scoring', aiScoringRoutes);
-        app.use('/api/messages', messageRoutes);
-        app.use('/api/notifications', notificationRoutes);
-        app.use('/api/admin', adminRoutes);
-        app.use('/api/admin/export', exportRoutes);
+        // Temporarily disabled MongoDB-dependent routes:
+        // app.use('/api/applications', applicationRoutes);
+        // app.use('/api/resumes', resumeRoutes);
+        // app.use('/api/payments', paymentRoutes);
+        // app.use('/api/settings', systemSettingsRoutes);
+        // app.use('/api/referrals', referralRoutes);
+        // app.use('/api/ai-scoring', aiScoringRoutes);
+        // app.use('/api/messages', messageRoutes);
+        // app.use('/api/notifications', notificationRoutes);
+        // app.use('/api/admin', adminRoutes);
+        // app.use('/api/admin/export', exportRoutes);
 
         // Health check route
         app.get('/api/health', (req, res) => {
@@ -100,11 +103,10 @@ async function initializeServer() {
         server.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`💬 Socket.IO enabled for real-time communication`);
-            console.log(`🔔 Notification service initialized`);
-            console.log(`📊 Analytics service initialized`);
-            console.log(`💼 Admin dashboard available`);
+            console.log(`📦 PostgreSQL database connected`);
+            console.log(`🔗 Basic job API endpoints available`);
             console.log(`📁 File uploads available at /uploads`);
+            console.log(`⚠️  Advanced features temporarily disabled`);
         });
         
     } catch (error) {
