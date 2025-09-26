@@ -275,5 +275,5 @@ class User extends BaseModel {
     }
 }
 
-// Export a singleton instance
-module.exports = new User();
+// Export the class
+module.exports = User;
