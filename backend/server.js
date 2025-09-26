@@ -45,7 +45,12 @@ async function initializeServer() {
         // Security middleware
         app.use(helmet());
         app.use(cors({
-            origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+            origin: [
+                process.env.FRONTEND_URL || 'http://localhost:3000',
+                'http://localhost:3000',
+                /^https:\/\/jp-frontend.*\.vercel\.app$/,
+                'https://jp-frontend-stg.vercel.app' // staging if you have one
+            ],
             credentials: true
         }));
 
