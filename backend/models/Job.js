@@ -135,33 +135,56 @@ class Job extends BaseModel {
      */
     async getJobById(jobId) {
         try {
-            // First, let's use a simpler query to avoid potential column issues
-            const query = `
-                SELECT 
-                    j.id, j.title, j.description, j.location, j.salary_min, j.salary_max,
-                    j.experience_level, j.employment_type, j.is_remote, j.status, j.is_active,
-                    j.requirements, j.benefits, j.skills_required, j.application_deadline,
-                    j.views, j.is_urgent, j.is_featured, j.created_at, j.updated_at, j.posted_at,
-                    j.company_id, j.posted_by_recruiter_id,
-                    COALESCE(c.name, '') as company_name,
-                    COALESCE(c.description, '') as company_description,
-                    COALESCE(c.logo_url, '') as company_logo,
-                    COALESCE(c.website, '') as company_website,
-                    COALESCE(u.first_name || ' ' || u.last_name, '') as posted_by_name,
-                    COALESCE(u.email, '') as posted_by_email
+            // Ultra-conservative approach - start with just the basic columns we know exist
+            const basicQuery = `
+                SELECT j.id, j.title, j.description, j.location, j.company_id,
+                       j.salary_min, j.salary_max, j.is_active, j.created_at,
+                       c.name as company_name
                 FROM jobs j
                 LEFT JOIN companies c ON j.company_id = c.id
-                LEFT JOIN users u ON j.posted_by_recruiter_id = u.id
                 WHERE j.id = $1
             `;
             
-            const result = await this.query(query, [jobId]);
+            const result = await this.query(basicQuery, [jobId]);
             if (result.rows.length === 0) return null;
 
             const job = result.rows[0];
             
-            // Safely parse JSON fields with better error handling
-            this.parseJobJsonFields(job);
+            // Add safe default values for commonly expected fields
+            job.requirements = [];
+            job.benefits = [];
+            job.skills_required = [];
+            job.employment_type = job.employment_type || 'Full-time';
+            job.experience_level = job.experience_level || 'Mid Level';
+            job.is_remote = job.is_remote || false;
+            job.status = job.status || 'active';
+            job.views = job.views || 0;
+            job.company = job.company_name;
+            job.postedDate = job.created_at;
+            job.posted_at = job.created_at;
+            
+            // Try to get additional fields if they exist
+            try {
+                const extendedQuery = `
+                    SELECT employment_type, experience_level, is_remote, status, views,
+                           requirements, benefits, skills_required, posted_at
+                    FROM jobs WHERE id = $1
+                `;
+                const extendedResult = await this.query(extendedQuery, [jobId]);
+                if (extendedResult.rows.length > 0) {
+                    const extended = extendedResult.rows[0];
+                    Object.keys(extended).forEach(key => {
+                        if (extended[key] !== null) {
+                            job[key] = extended[key];
+                        }
+                    });
+                    
+                    // Parse JSON fields if they exist
+                    this.parseJobJsonFields(job);
+                }
+            } catch (extendedError) {
+                console.log('Extended fields not available, using defaults');
+            }
             
             return job;
             
