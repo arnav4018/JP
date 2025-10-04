@@ -149,10 +149,28 @@ class Job extends BaseModel {
         if (result.rows.length === 0) return null;
 
         const job = result.rows[0];
-        // Parse JSON fields
-        job.requirements = job.requirements ? JSON.parse(job.requirements) : [];
-        job.benefits = job.benefits ? JSON.parse(job.benefits) : [];
-        job.skills_required = job.skills_required ? JSON.parse(job.skills_required) : [];
+        
+        // Safely parse JSON fields
+        try {
+            job.requirements = job.requirements ? JSON.parse(job.requirements) : [];
+        } catch (e) {
+            console.log('Failed to parse requirements JSON:', e.message);
+            job.requirements = [];
+        }
+        
+        try {
+            job.benefits = job.benefits ? JSON.parse(job.benefits) : [];
+        } catch (e) {
+            console.log('Failed to parse benefits JSON:', e.message);
+            job.benefits = [];
+        }
+        
+        try {
+            job.skills_required = job.skills_required ? JSON.parse(job.skills_required) : [];
+        } catch (e) {
+            console.log('Failed to parse skills_required JSON:', e.message);
+            job.skills_required = [];
+        }
         
         return job;
     }
