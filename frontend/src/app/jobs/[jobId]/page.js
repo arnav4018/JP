@@ -52,9 +52,38 @@ export default function JobDetailsPage() {
       setError(null);
 
       try {
-        // Fetch job details
-        const jobData = await API.jobs.getById(params.jobId);
-        setJob(jobData);
+        // First try to fetch job details
+        try {
+          const jobData = await API.jobs.getById(params.jobId);
+          setJob(jobData);
+        } catch (detailError) {
+          console.log('Individual job API failed, trying fallback:', detailError);
+          
+          // Fallback: Get job from jobs list
+          const allJobsResponse = await API.jobs.getAll({ limit: 100 });
+          const targetJob = allJobsResponse.data.jobs.find(job => job.id.toString() === params.jobId.toString());
+          
+          if (targetJob) {
+            // Transform the job data to match expected format
+            const transformedJob = {
+              ...targetJob,
+              company: targetJob.company_name || targetJob.company,
+              postedDate: targetJob.created_at,
+              type: targetJob.employment_type || 'Full-time',
+              category: targetJob.experience_level || 'Not specified',
+              salary: targetJob.salary_min && targetJob.salary_max 
+                ? `₹${(targetJob.salary_min / 100000).toFixed(1)}L - ₹${(targetJob.salary_max / 100000).toFixed(1)}L`
+                : targetJob.salary_min 
+                  ? `₹${(targetJob.salary_min / 100000).toFixed(1)}L+`
+                  : 'Not disclosed',
+              requirements: targetJob.requirements || [],
+              benefits: targetJob.benefits || []
+            };
+            setJob(transformedJob);
+          } else {
+            throw new Error('Job not found in jobs list either');
+          }
+        }
 
         // Check if user has applied (only if authenticated)
         if (isAuthenticated && user) {
