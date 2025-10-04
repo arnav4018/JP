@@ -134,45 +134,65 @@ class Job extends BaseModel {
      * @returns {Promise} Job details
      */
     async getJobById(jobId) {
-        const query = `
-            SELECT j.*, c.name as company_name, c.description as company_description,
-                   c.logo_url as company_logo, c.website as company_website,
-                   u.first_name || ' ' || u.last_name as posted_by_name,
-                   u.email as posted_by_email
-            FROM jobs j
-            LEFT JOIN companies c ON j.company_id = c.id
-            LEFT JOIN users u ON j.posted_by_recruiter_id = u.id
-            WHERE j.id = $1
-        `;
-        
-        const result = await this.query(query, [jobId]);
-        if (result.rows.length === 0) return null;
+        try {
+            // First, let's use a simpler query to avoid potential column issues
+            const query = `
+                SELECT 
+                    j.id, j.title, j.description, j.location, j.salary_min, j.salary_max,
+                    j.experience_level, j.employment_type, j.is_remote, j.status, j.is_active,
+                    j.requirements, j.benefits, j.skills_required, j.application_deadline,
+                    j.views, j.is_urgent, j.is_featured, j.created_at, j.updated_at, j.posted_at,
+                    j.company_id, j.posted_by_recruiter_id,
+                    COALESCE(c.name, '') as company_name,
+                    COALESCE(c.description, '') as company_description,
+                    COALESCE(c.logo_url, '') as company_logo,
+                    COALESCE(c.website, '') as company_website,
+                    COALESCE(u.first_name || ' ' || u.last_name, '') as posted_by_name,
+                    COALESCE(u.email, '') as posted_by_email
+                FROM jobs j
+                LEFT JOIN companies c ON j.company_id = c.id
+                LEFT JOIN users u ON j.posted_by_recruiter_id = u.id
+                WHERE j.id = $1
+            `;
+            
+            const result = await this.query(query, [jobId]);
+            if (result.rows.length === 0) return null;
 
-        const job = result.rows[0];
-        
-        // Safely parse JSON fields
-        try {
-            job.requirements = job.requirements ? JSON.parse(job.requirements) : [];
-        } catch (e) {
-            console.log('Failed to parse requirements JSON:', e.message);
-            job.requirements = [];
+            const job = result.rows[0];
+            
+            // Safely parse JSON fields with better error handling
+            this.parseJobJsonFields(job);
+            
+            return job;
+            
+        } catch (error) {
+            console.error(`Error in getJobById for job ${jobId}:`, error);
+            throw error;
         }
+    }
+    
+    /**
+     * Helper method to safely parse JSON fields in job objects
+     * @param {Object} job - Job object to parse
+     */
+    parseJobJsonFields(job) {
+        const jsonFields = ['requirements', 'benefits', 'skills_required'];
         
-        try {
-            job.benefits = job.benefits ? JSON.parse(job.benefits) : [];
-        } catch (e) {
-            console.log('Failed to parse benefits JSON:', e.message);
-            job.benefits = [];
-        }
-        
-        try {
-            job.skills_required = job.skills_required ? JSON.parse(job.skills_required) : [];
-        } catch (e) {
-            console.log('Failed to parse skills_required JSON:', e.message);
-            job.skills_required = [];
-        }
-        
-        return job;
+        jsonFields.forEach(field => {
+            try {
+                if (job[field]) {
+                    // Check if it's already an object/array
+                    if (typeof job[field] === 'string') {
+                        job[field] = JSON.parse(job[field]);
+                    }
+                } else {
+                    job[field] = [];
+                }
+            } catch (e) {
+                console.log(`Failed to parse ${field} JSON for job ${job.id}:`, e.message, 'Raw value:', job[field]);
+                job[field] = [];
+            }
+        });
     }
 
     /**

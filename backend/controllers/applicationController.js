@@ -17,32 +17,9 @@ const applyToJob = async (req, res, next) => {
             resume
         } = req.body;
 
-        // Get job details with fallback
+        // Get job details using the improved method
         const jobModel = new Job();
-        let job;
-        
-        try {
-            job = await jobModel.getJobById(jobId);
-        } catch (error) {
-            console.log('getJobById failed, trying fallback approach:', error.message);
-            
-            // Fallback: Get basic job info from jobs table
-            const fallbackQuery = `
-                SELECT j.*, c.name as company_name
-                FROM jobs j
-                LEFT JOIN companies c ON j.company_id = c.id
-                WHERE j.id = $1 AND j.is_active = true
-            `;
-            
-            const result = await jobModel.query(fallbackQuery, [jobId]);
-            if (result.rows.length > 0) {
-                job = result.rows[0];
-                // Set default values for fields that might cause issues
-                job.requirements = [];
-                job.benefits = [];
-                job.skills_required = [];
-            }
-        }
+        const job = await jobModel.getJobById(jobId);
         
         if (!job) {
             return res.status(404).json({
