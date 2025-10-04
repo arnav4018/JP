@@ -224,14 +224,20 @@ class Job extends BaseModel {
      * @returns {Promise} Updated job
      */
     async incrementViews(jobId) {
-        const query = `
-            UPDATE jobs 
-            SET views = views + 1 
-            WHERE id = $1 
-            RETURNING *
-        `;
-        const result = await this.query(query, [jobId]);
-        return result.rows[0];
+        try {
+            const query = `
+                UPDATE jobs 
+                SET views = views + 1 
+                WHERE id = $1 
+                RETURNING *
+            `;
+            const result = await this.query(query, [jobId]);
+            return result.rows[0];
+        } catch (error) {
+            // If views column doesn't exist, silently fail
+            console.log('Views column not available, skipping increment');
+            return null;
+        }
     }
 
     /**

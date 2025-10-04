@@ -102,8 +102,8 @@ const getJob = async (req, res, next) => {
             });
         }
 
-        // Increment view count
-        await jobModel.incrementViews(req.params.id);
+        // Skip incrementing view count as views column doesn't exist in current schema
+        // await jobModel.incrementViews(req.params.id);
 
         res.status(200).json({
             success: true,
