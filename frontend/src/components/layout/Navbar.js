@@ -105,14 +105,18 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-10">
+          <div className="hidden md:flex items-center space-x-8">
             <NavLink href="/jobs">Find Jobs</NavLink>
             <NavLink href="/companies">Companies</NavLink>
             {isAuthenticated && (
               <>
-                <NavLink href="/resume-builder">Resume Builder</NavLink>
+                {user?.role === 'candidate' && (
+                  <NavLink href="/resume-builder">Resume Builder</NavLink>
+                )}
                 <NavLink href="/referrals">Refer & Earn</NavLink>
-                <NavLink href="/pricing">Pricing</NavLink>
+                {user?.role === 'recruiter' && (
+                  <NavLink href="/pricing">Pricing</NavLink>
+                )}
               </>
             )}
             {isAdminUser && (
@@ -123,10 +127,10 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <>
-                <NavLink href="/applications">My Applications</NavLink>
+                <NavLink href="/applications" className="whitespace-nowrap">My Applications</NavLink>
                 
                 {/* Live Chat Button */}
                 <button
@@ -204,7 +208,9 @@ export default function Navbar() {
                     onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
                   >
                     <User className="h-5 w-5" />
-                    <span className="text-sm font-medium">{user?.name || 'User'}</span>
+                    <span className="text-sm font-medium">
+                      {user?.firstName || user?.first_name || user?.name || 'User'}
+                    </span>
                     <ChevronDown className="h-4 w-4" />
                   </button>
 
@@ -392,15 +398,19 @@ export default function Navbar() {
               
               {isAuthenticated && (
                 <>
-                  <MobileNavLink href="/resume-builder" onClick={() => setIsMobileMenuOpen(false)}>
-                    Resume Builder
-                  </MobileNavLink>
+                  {user?.role === 'candidate' && (
+                    <MobileNavLink href="/resume-builder" onClick={() => setIsMobileMenuOpen(false)}>
+                      Resume Builder
+                    </MobileNavLink>
+                  )}
                   <MobileNavLink href="/referrals" onClick={() => setIsMobileMenuOpen(false)}>
                     Refer & Earn
                   </MobileNavLink>
-                  <MobileNavLink href="/pricing" onClick={() => setIsMobileMenuOpen(false)}>
-                    Pricing
-                  </MobileNavLink>
+                  {user?.role === 'recruiter' && (
+                    <MobileNavLink href="/pricing" onClick={() => setIsMobileMenuOpen(false)}>
+                      Pricing
+                    </MobileNavLink>
+                  )}
                   {isAdminUser && (
                     <MobileNavLink href="/admin" onClick={() => setIsMobileMenuOpen(false)}>
                       Admin Panel
@@ -423,7 +433,7 @@ export default function Navbar() {
                     <div className="px-3 py-2 mb-2" style={{ color: 'var(--text-primary)' }}>
                       <div className="flex items-center space-x-2 text-sm font-medium">
                         <User className="h-4 w-4" />
-                        <span>Welcome, {user?.name || 'User'}</span>
+                        <span>Welcome, {user?.firstName || user?.first_name || user?.name || 'User'}</span>
                       </div>
                     </div>
                     

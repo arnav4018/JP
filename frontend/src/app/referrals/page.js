@@ -48,49 +48,23 @@ export default function ReferralSystem() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'referrals', 'earnings'
   
-  // Mock referral data - in real app, this would come from API
+  // Real user data - empty state for new users
   const [referralStats, setReferralStats] = useState({
-    totalReferrals: 15,
-    successfulPlacements: 6,
-    pendingReferrals: 4,
-    totalEarnings: 2500,
-    pendingEarnings: 800
+    totalReferrals: 0,
+    successfulPlacements: 0,
+    pendingReferrals: 0,
+    totalEarnings: 0,
+    pendingEarnings: 0
   });
 
-  const [referralHistory, setReferralHistory] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john.smith@email.com',
-      position: 'Frontend Developer',
-      company: 'TechCorp Inc.',
-      status: 'placed',
-      bonus: 500,
-      referredDate: '2024-01-15',
-      placedDate: '2024-02-01'
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      email: 'sarah.j@email.com',
-      position: 'Data Analyst',
-      company: 'DataFlow Solutions',
-      status: 'interview',
-      bonus: 400,
-      referredDate: '2024-01-20',
-      interviewDate: '2024-02-10'
-    },
-    {
-      id: 3,
-      name: 'Mike Wilson',
-      email: 'mike.w@email.com',
-      position: 'DevOps Engineer',
-      company: 'CloudTech Ltd',
-      status: 'pending',
-      bonus: 600,
-      referredDate: '2024-01-25'
+  const [referralHistory, setReferralHistory] = useState([]);
+  
+  // TODO: Fetch real referral data from API
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // fetchReferralData(user.id);
     }
-  ]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {

@@ -68,9 +68,19 @@ export default function Home() {
     const loadFeaturedJobs = async () => {
       try {
         const response = await API.jobs.getAll({ limit: 6 });
-        setFeaturedJobs(response.jobs);
+        // Handle different API response formats
+        let jobs = [];
+        if (response && response.success && response.data && response.data.jobs) {
+          jobs = response.data.jobs; // New format
+        } else if (response && response.jobs) {
+          jobs = response.jobs; // Legacy format
+        } else if (Array.isArray(response)) {
+          jobs = response; // Direct array response
+        }
+        setFeaturedJobs(Array.isArray(jobs) ? jobs : []);
       } catch (error) {
         console.error('Failed to load featured jobs:', error);
+        setFeaturedJobs([]); // Ensure it's always an array
       } finally {
         setLoading(false);
       }
@@ -100,9 +110,19 @@ export default function Home() {
         try {
           // For now, we'll fetch regular jobs as personalization needs user data integration
           const response = await API.jobs.getAll({ limit: 6 });
-          setPersonalizedJobs(response.jobs);
+          // Handle different API response formats
+          let jobs = [];
+          if (response && response.success && response.data && response.data.jobs) {
+            jobs = response.data.jobs; // New format
+          } else if (response && response.jobs) {
+            jobs = response.jobs; // Legacy format
+          } else if (Array.isArray(response)) {
+            jobs = response; // Direct array response
+          }
+          setPersonalizedJobs(Array.isArray(jobs) ? jobs : []);
         } catch (error) {
           console.error('Failed to load personalized jobs:', error);
+          setPersonalizedJobs([]); // Ensure it's always an array
         } finally {
           setPersonalizedLoading(false);
         }
@@ -350,10 +370,10 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            ) : personalizedJobs.length > 0 ? (
+            ) : Array.isArray(personalizedJobs) && personalizedJobs.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {personalizedJobs.map((job, index) => (
-                  <div key={job.id} className="relative">
+                  <div key={job.id || job._id || index} className="relative">
                     <div className="absolute -top-2 -right-2 z-10">
                       <div className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-medium">
                         {job.relevanceScore > 0 ? `${job.relevanceScore} matches` : 'Recommended'}
@@ -426,9 +446,21 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
+              {Array.isArray(featuredJobs) && featuredJobs.length > 0 ? (
+                featuredJobs.map((job) => (
+                  <JobCard key={job.id || job._id || Math.random()} job={job} />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12 rounded-lg" style={{ backgroundColor: 'var(--background-deep)' }}>
+                  <Briefcase className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--text-secondary)' }} />
+                  <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                    No Jobs Available
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)' }}>
+                    Check back later for new job opportunities.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

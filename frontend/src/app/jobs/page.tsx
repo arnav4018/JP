@@ -55,8 +55,15 @@ export default function JobsPage() {
           limit: 10
         });
         
-        setJobs(response.jobs);
-        setTotalJobs(response.total);
+        // Handle the new API response format
+        if (response.success && response.data && response.data.jobs) {
+          setJobs(response.data.jobs);
+          setTotalJobs(response.pagination?.total || response.count || 0);
+        } else {
+          // Fallback for backward compatibility
+          setJobs(response.jobs || []);
+          setTotalJobs(response.total || 0);
+        }
       } catch (err) {
         setError('Failed to load jobs');
         console.error('Error loading jobs:', err);

@@ -1,6 +1,5 @@
 const express = require('express');
 const {
-    applyToJob,
     getMyApplications,
     getJobApplications,
     updateApplicationStatus,
@@ -13,20 +12,13 @@ const {
 } = require('../controllers/applicationController');
 
 const { protect, authorize } = require('../middleware/auth');
-const { uploadConfigs, handleUploadError } = require('../config/aws');
 
 const router = express.Router();
 
 // Protect all routes
 router.use(protect);
 
-// Apply to job with resume upload
-router.post('/apply/:jobId', 
-    authorize('candidate'),
-    uploadConfigs.resume.single('resume'),
-    handleUploadError,
-    applyToJob
-);
+// Note: Apply functionality moved to /api/jobs/:jobId/apply
 
 // Get candidate's applications
 router.get('/my-applications',

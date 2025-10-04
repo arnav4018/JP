@@ -112,6 +112,87 @@ async function setupDatabase(closePool = false) {
             console.log('✅ Sample companies inserted');
         }
 
+        // Check if jobs table exists and create if needed
+        if (!tables.includes('jobs')) {
+            console.log('🔧 Creating jobs table...');
+            const createJobsTable = `
+                CREATE TABLE jobs (
+                    id SERIAL PRIMARY KEY,
+                    title VARCHAR(255) NOT NULL,
+                    description TEXT NOT NULL,
+                    company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+                    location VARCHAR(255),
+                    salary_min INTEGER,
+                    salary_max INTEGER,
+                    experience_level VARCHAR(100),
+                    employment_type VARCHAR(50) DEFAULT 'full-time',
+                    is_remote BOOLEAN DEFAULT FALSE,
+                    posted_by_recruiter_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'paused', 'closed', 'draft')),
+                    requirements TEXT,
+                    benefits TEXT,
+                    skills_required TEXT,
+                    application_deadline TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    views INTEGER DEFAULT 0,
+                    is_urgent BOOLEAN DEFAULT FALSE,
+                    is_featured BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE INDEX idx_jobs_title ON jobs(title);
+                CREATE INDEX idx_jobs_company ON jobs(company_id);
+                CREATE INDEX idx_jobs_location ON jobs(location);
+                CREATE INDEX idx_jobs_status ON jobs(status);
+                CREATE INDEX idx_jobs_is_active ON jobs(is_active);
+                CREATE INDEX idx_jobs_posted_by ON jobs(posted_by_recruiter_id);
+            `;
+            
+            await pool.query(createJobsTable);
+            console.log('✅ Jobs table created successfully');
+        }
+
+        // Check if applications table exists and create if needed
+        if (!tables.includes('applications')) {
+            console.log('🔧 Creating applications table...');
+            const createApplicationsTable = `
+                CREATE TABLE applications (
+                    id SERIAL PRIMARY KEY,
+                    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                    candidate_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    status VARCHAR(50) DEFAULT 'Applied' CHECK (status IN ('Applied', 'Reviewed', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Offer Extended', 'Offer Accepted', 'Rejected', 'Withdrawn')),
+                    resume_filename VARCHAR(255),
+                    resume_original_name VARCHAR(255),
+                    resume_file_size INTEGER,
+                    resume_mime_type VARCHAR(100),
+                    cover_letter TEXT,
+                    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    reviewed_at TIMESTAMP,
+                    reviewed_by INTEGER REFERENCES users(id),
+                    status_reason TEXT,
+                    source VARCHAR(50) DEFAULT 'direct',
+                    referred_by INTEGER REFERENCES users(id),
+                    expected_salary_amount INTEGER,
+                    expected_salary_currency VARCHAR(10) DEFAULT 'INR',
+                    availability_date DATE,
+                    notice_period VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(job_id, candidate_id)
+                );
+
+                CREATE INDEX idx_applications_job ON applications(job_id);
+                CREATE INDEX idx_applications_candidate ON applications(candidate_id);
+                CREATE INDEX idx_applications_status ON applications(status);
+                CREATE INDEX idx_applications_submitted ON applications(submitted_at);
+            `;
+            
+            await pool.query(createApplicationsTable);
+            console.log('✅ Applications table created successfully');
+        }
+
         console.log('🎉 Database setup completed successfully');
 
     } catch (error) {

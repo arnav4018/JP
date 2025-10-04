@@ -146,11 +146,16 @@ const defaultReference = {
 export const useResumeStore = create(
   persist(
     (set, get) => ({
-      // Current resume being edited
-      currentResume: { ...defaultResumeData },
+      // Current resume being edited - initialize empty for new users
+      currentResume: null,
       
       // All saved resumes
       savedResumes: [],
+      
+      // Initialize empty resume for new users
+      initializeNewUserResume: () => {
+        set({ currentResume: { ...defaultResumeData } });
+      },
       
       // UI state
       selectedTemplate: 'classic',

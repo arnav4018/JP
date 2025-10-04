@@ -1,11 +1,9 @@
 'use client';
 
-// ⚠️ DEPRECATED: This store is being replaced by authService
-// Use @/services/authService instead for new components
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { mockAuth } from '@/services/mockApi';
+import API from '@/services/api';
+import { tokenManager } from '@/services/httpClient';
 
 export const useAuthStore = create(
   persist(
@@ -21,22 +19,29 @@ export const useAuthStore = create(
       login: async (email, password) => {
         set({ loading: true, error: null });
         try {
-          const response = await mockAuth.login(email, password);
-          if (response.success) {
+          const response = await API.auth.login(email, password);
+          if (response.success && response.data) {
+            // Store tokens in localStorage
+            tokenManager.setToken(response.data.token);
+            if (response.data.refreshToken) {
+              tokenManager.setRefreshToken(response.data.refreshToken);
+            }
+            
             set({
-              user: response.user,
-              token: response.token,
+              user: response.data.user,
+              token: response.data.token,
               isAuthenticated: true,
               loading: false,
               error: null
             });
-            return { success: true };
+            return { success: true, user: response.data.user };
           } else {
-            set({ loading: false, error: response.error });
-            return { success: false, error: response.error };
+            const errorMessage = response.message || 'Login failed';
+            set({ loading: false, error: errorMessage });
+            return { success: false, error: errorMessage };
           }
         } catch (error) {
-          const errorMessage = 'Login failed. Please try again.';
+          const errorMessage = error.message || 'Login failed. Please try again.';
           set({ loading: false, error: errorMessage });
           return { success: false, error: errorMessage };
         }
@@ -45,35 +50,58 @@ export const useAuthStore = create(
       register: async (userData) => {
         set({ loading: true, error: null });
         try {
-          const response = await mockAuth.register(userData);
-          if (response.success) {
+          const response = await API.auth.register(userData);
+          if (response.success && response.data) {
+            // Store tokens in localStorage
+            tokenManager.setToken(response.data.token);
+            if (response.data.refreshToken) {
+              tokenManager.setRefreshToken(response.data.refreshToken);
+            }
+            
             set({
-              user: response.user,
-              token: response.token,
+              user: response.data.user,
+              token: response.data.token,
               isAuthenticated: true,
               loading: false,
               error: null
             });
-            return { success: true };
+            return { success: true, user: response.data.user };
           } else {
-            set({ loading: false, error: response.error });
-            return { success: false, error: response.error };
+            const errorMessage = response.message || 'Registration failed';
+            set({ loading: false, error: errorMessage });
+            return { success: false, error: errorMessage };
           }
         } catch (error) {
-          const errorMessage = 'Registration failed. Please try again.';
+          const errorMessage = error.message || 'Registration failed. Please try again.';
           set({ loading: false, error: errorMessage });
           return { success: false, error: errorMessage };
         }
       },
 
-      logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null
-        });
+      logout: async () => {
+        try {
+          // Call logout API
+          await API.auth.logout();
+        } catch (error) {
+          console.warn('Logout API call failed:', error);
+        } finally {
+          // Clear tokens from localStorage
+          tokenManager.removeToken();
+          
+          // Clear store state
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            loading: false,
+            error: null
+          });
+          
+          // Redirect to login page
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
       },
 
       updateProfile: async (profileData) => {
@@ -103,30 +131,83 @@ export const useAuthStore = create(
 
       // Initialize user from token (for page refresh)
       initializeAuth: async () => {
-        const { token } = get();
-        if (!token) return;
+        console.log('🔍 Initializing auth...');
+        
+        // First check localStorage for token
+        const token = tokenManager.getToken();
+        const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        
+        console.log('📱 Token from localStorage:', token ? 'Found' : 'Not found');
+        console.log('👤 User data from localStorage:', userData ? 'Found' : 'Not found');
+        
+        if (!token) {
+          console.log('❌ No token found, clearing auth state');
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            loading: false,
+            error: null
+          });
+          return;
+        }
+        
+        // If we have user data in localStorage, use it immediately while validating
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            console.log('👤 Setting user from localStorage:', parsedUser.email);
+            set({
+              user: parsedUser,
+              token: token,
+              isAuthenticated: true,
+              loading: true, // Still loading while we validate
+              error: null
+            });
+          } catch (e) {
+            console.warn('⚠️ Failed to parse user data from localStorage');
+          }
+        }
 
+        console.log('🔄 Validating token with API...');
         set({ loading: true });
         try {
-          const user = await mockAuth.getCurrentUser(token);
+          // Try to get current user profile to validate token
+          const response = await API.auth.getProfile();
+          const user = response.data?.user || response.user;
+          
+          console.log('✅ API response received:', user ? 'User found' : 'No user');
+          
           if (user) {
+            console.log('🎉 Auth successful! User:', user.email, 'Role:', user.role);
             set({
               user,
+              token,
               isAuthenticated: true,
               loading: false,
               error: null
             });
+            
+            // Update localStorage with fresh user data
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('user', JSON.stringify(user));
+            }
           } else {
-            // Token is invalid, clear auth state
-            set({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              loading: false,
-              error: null
-            });
+            throw new Error('No user data received');
           }
         } catch (error) {
+          console.warn('⚠️ Token validation failed:', error.message);
+          
+          // If it's a 401 error, the token is expired/invalid
+          if (error.status === 401 || error.type === 'AUTHENTICATION_ERROR') {
+            console.log('🗑️ Clearing invalid tokens and auth state');
+            // Clear everything from localStorage and store
+            tokenManager.removeToken();
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('user');
+            }
+          }
+          
           set({
             user: null,
             token: null,
@@ -138,6 +219,22 @@ export const useAuthStore = create(
       },
 
       clearError: () => set({ error: null }),
+      
+      // Clear all auth data (for debugging)
+      clearAuth: () => {
+        console.log('🧹 Manually clearing all auth data');
+        tokenManager.removeToken();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+        }
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          loading: false,
+          error: null
+        });
+      },
 
       // Utility functions
       isLoggedIn: () => {
@@ -183,6 +280,7 @@ export const useAuth = () => {
     updateProfile: store.updateProfile,
     initializeAuth: store.initializeAuth,
     clearError: store.clearError,
+    clearAuth: store.clearAuth,
     isLoggedIn: store.isLoggedIn,
     getUserId: store.getUserId,
     hasPermission: store.hasPermission

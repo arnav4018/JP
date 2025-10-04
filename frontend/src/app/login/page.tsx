@@ -2,12 +2,16 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import FormInput from '@/components/ui/FormInput';
 import { createLoginValidator } from '@/utils/validation';
+import { useAuth } from '@/store/useAuthStore';
 import { Eye, EyeOff, Mail, Lock, Github, Linkedin, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login, loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<'candidate' | 'recruiter'>('candidate');
   const [formData, setFormData] = useState({
@@ -16,7 +20,6 @@ export default function LoginPage() {
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validator = createLoginValidator();
@@ -47,27 +50,27 @@ export default function LoginPage() {
       setTouched({ email: true, password: true });
       return;
     }
-
-    setIsSubmitting(true);
     
     try {
-      // TODO: Implement actual login logic
-      console.log('Login attempt:', { ...formData, userType });
+      // Use auth store login method
+      const result = await login(formData.email, formData.password);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate random failure for demo
-      if (Math.random() > 0.7) {
-        throw new Error('Invalid email or password');
+      if (result.success && result.user) {
+        // Redirect based on user role
+        const user = result.user;
+        if (user.role === 'admin') {
+          router.push('/admin');
+        } else if (user.role === 'recruiter') {
+          router.push('/post-job');
+        } else {
+          router.push('/');
+        }
+      } else {
+        setSubmitError(result.error || 'Login failed');
       }
-      
-      // Success - redirect would happen here
-      console.log('Login successful');
     } catch (err) {
+      console.error('Login error:', err);
       setSubmitError(err instanceof Error ? err.message : 'Login failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -210,11 +213,11 @@ export default function LoginPage() {
               <div>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={loading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ color: 'var(--background-deep)', backgroundColor: 'var(--accent-interactive)' }}
                 >
-                  {isSubmitting ? (
+                  {loading ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

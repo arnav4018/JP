@@ -11,8 +11,7 @@ const { connectDB } = require('./config/database');
 const { setupDatabase } = require('./setup-database');
 const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobs');
-// Temporarily commented out MongoDB-dependent routes:
-// const applicationRoutes = require('./routes/applications');
+const applicationRoutes = require('./routes/applications');
 // const resumeRoutes = require('./routes/resumes');
 // const paymentRoutes = require('./routes/paymentRoutes');
 // const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
@@ -78,8 +77,7 @@ async function initializeServer() {
         // Routes
         app.use('/api/auth', authRoutes);
         app.use('/api/jobs', jobRoutes);
-        // Temporarily disabled MongoDB-dependent routes:
-        // app.use('/api/applications', applicationRoutes);
+        app.use('/api/applications', applicationRoutes);
         // app.use('/api/resumes', resumeRoutes);
         // app.use('/api/payments', paymentRoutes);
         // app.use('/api/settings', systemSettingsRoutes);

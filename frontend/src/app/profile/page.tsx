@@ -57,7 +57,14 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="mt-4 sm:mt-0 sm:ml-6 text-center sm:text-left flex-1">
-                  <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{user.name}</h1>
+                  <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.first_name && user.last_name 
+                      ? `${user.first_name} ${user.last_name}`
+                      : user.name || 'User'
+                    }
+                  </h1>
                   <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>{user.profile?.title || 'Job Seeker'}</p>
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
                 </div>

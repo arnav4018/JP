@@ -5,6 +5,23 @@ import { memo } from 'react';
 import { MapPin, Clock, Briefcase, DollarSign, Building } from 'lucide-react';
 
 function JobCard({ job }) {
+  // Transform backend data to match frontend expectations
+  const transformedJob = {
+    id: job.id,
+    title: job.title,
+    description: job.description,
+    company: job.company_name || job.company,
+    location: job.location,
+    salary: job.salary_min && job.salary_max 
+      ? `₹${Math.round(job.salary_min / 100000)}L - ₹${Math.round(job.salary_max / 100000)}L`
+      : job.salary,
+    category: job.experience_level || job.category,
+    type: job.type || 'Full-time', // Default to Full-time if not specified
+    postedDate: job.created_at || job.postedDate,
+    requirements: job.requirements || [],
+    benefits: job.benefits || []
+  };
+
   const formatPostedDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -34,28 +51,28 @@ function JobCard({ job }) {
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <Link href={`/jobs/${job.id}`} className="block group">
+          <Link href={`/jobs/${transformedJob.id}`} className="block group">
             <h3 className="text-xl font-semibold transition-colors mb-1" style={{ color: 'var(--text-primary)' }} onMouseEnter={(e) => e.target.style.color = 'var(--accent-interactive)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-primary)'}>
-              {job.title}
+              {transformedJob.title}
             </h3>
           </Link>
           <div className="flex items-center space-x-2 mb-2" style={{ color: 'var(--text-secondary)' }}>
             <Building className="h-4 w-4" />
             <Link 
-              href={`/companies/${job.company.toLowerCase().replace(/\s+/g, '-')}`}
+              href={`/companies/${transformedJob.company.toLowerCase().replace(/\s+/g, '-')}`}
               className="transition-colors font-medium"
               style={{ color: 'var(--text-secondary)' }}
               onMouseEnter={(e) => e.target.style.color = 'var(--accent-interactive)'}
               onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
             >
-              {job.company}
+              {transformedJob.company}
             </Link>
           </div>
         </div>
         
         {/* Job Type Badge */}
-        <span className="px-3 py-1 rounded-full text-xs font-medium" style={getJobTypeColor(job.type)}>
-          {job.type}
+        <span className="px-3 py-1 rounded-full text-xs font-medium" style={getJobTypeColor(transformedJob.type)}>
+          {transformedJob.type}
         </span>
       </div>
 
@@ -63,37 +80,37 @@ function JobCard({ job }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <MapPin className="h-4 w-4" />
-          <span>{job.location}</span>
+          <span>{transformedJob.location}</span>
         </div>
         
-        {job.salary && (
+        {transformedJob.salary && (
           <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
             <DollarSign className="h-4 w-4" />
-            <span>{job.salary}</span>
+            <span>{transformedJob.salary}</span>
           </div>
         )}
         
         <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <Briefcase className="h-4 w-4" />
-          <span>{job.category}</span>
+          <span>{transformedJob.category}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <Clock className="h-4 w-4" />
-          <span>{formatPostedDate(job.postedDate)}</span>
+          <span>{formatPostedDate(transformedJob.postedDate)}</span>
         </div>
       </div>
 
       {/* Description */}
       <p className="text-sm mb-4 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-        {job.description}
+        {transformedJob.description}
       </p>
 
       {/* Skills/Requirements */}
-      {job.requirements && job.requirements.length > 0 && (
+      {transformedJob.requirements && transformedJob.requirements.length > 0 && (
         <div className="mb-4">
           <div className="flex flex-wrap gap-2">
-            {job.requirements.slice(0, 4).map((skill, index) => (
+            {transformedJob.requirements.slice(0, 4).map((skill, index) => (
               <span
                 key={index}
                 className="px-2 py-1 rounded text-xs"
@@ -102,9 +119,9 @@ function JobCard({ job }) {
                 {skill}
               </span>
             ))}
-            {job.requirements.length > 4 && (
+            {transformedJob.requirements.length > 4 && (
               <span className="px-2 py-1 rounded text-xs" style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--text-secondary)' }}>
-                +{job.requirements.length - 4} more
+                +{transformedJob.requirements.length - 4} more
               </span>
             )}
           </div>
@@ -112,11 +129,11 @@ function JobCard({ job }) {
       )}
 
       {/* Benefits Preview */}
-      {job.benefits && job.benefits.length > 0 && (
+      {transformedJob.benefits && transformedJob.benefits.length > 0 && (
         <div className="mb-4">
           <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Benefits:</p>
           <div className="flex flex-wrap gap-1">
-            {job.benefits.slice(0, 3).map((benefit, index) => (
+            {transformedJob.benefits.slice(0, 3).map((benefit, index) => (
               <span
                 key={index}
                 className="text-xs px-2 py-1 rounded"
@@ -125,9 +142,9 @@ function JobCard({ job }) {
                 {benefit}
               </span>
             ))}
-            {job.benefits.length > 3 && (
+            {transformedJob.benefits.length > 3 && (
               <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                +{job.benefits.length - 3} more
+                +{transformedJob.benefits.length - 3} more
               </span>
             )}
           </div>
@@ -137,7 +154,7 @@ function JobCard({ job }) {
       {/* Actions */}
       <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--accent-subtle)' }}>
         <Link
-          href={`/jobs/${job.id}`}
+          href={`/jobs/${transformedJob.id}`}
           className="text-sm font-medium transition-colors"
           style={{ color: 'var(--accent-interactive)' }}
           onMouseEnter={(e) => e.target.style.opacity = '0.8'}
@@ -151,7 +168,7 @@ function JobCard({ job }) {
             Save
           </button>
           <Link
-            href={`/jobs/${job.id}/apply`}
+            href={`/jobs/${transformedJob.id}/apply`}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--accent-interactive)', color: 'var(--background-deep)' }}
           >

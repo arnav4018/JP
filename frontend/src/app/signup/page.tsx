@@ -2,12 +2,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react';
+import { useAuth } from '@/store/useAuthStore';
+import { Eye, EyeOff, Mail, Lock, User, Building, AlertCircle } from 'lucide-react';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { register, loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<'candidate' | 'recruiter'>('candidate');
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -18,10 +23,44 @@ export default function SignupPage() {
     termsAccepted: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Signup attempt:', { ...formData, userType });
-    // TODO: Implement actual signup logic
+    setSubmitError(null);
+
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      setSubmitError('Passwords do not match');
+      return;
+    }
+
+    if (!formData.termsAccepted) {
+      setSubmitError('Please accept the terms and conditions');
+      return;
+    }
+
+    try {
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: userType,
+        companyName: userType === 'recruiter' ? formData.company : undefined
+      };
+
+      // Use auth store register method
+      const result = await register(userData);
+      
+      if (result.success) {
+        // Redirect to profile completion or dashboard
+        router.push('/profile');
+      } else {
+        setSubmitError(result.error || 'Registration failed');
+      }
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setSubmitError(err.message || 'Registration failed. Please check your information and try again.');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +220,7 @@ export default function SignupPage() {
                     onChange={handleChange}
                     className="block w-full pl-10 pr-10 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2"
                     style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-panel)', color: 'var(--text-primary)' }}
-                    placeholder="Create a password"
+                    placeholder="At least 6 chars with uppercase, lowercase & number"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <button
@@ -195,6 +234,43 @@ export default function SignupPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  Confirm Password
+                </label>
+                <div className="mt-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2"
+                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-panel)', color: 'var(--text-primary)' }}
+                    placeholder="Confirm your password"
+                  />
+                </div>
+              </div>
+
+              {/* Error Display */}
+              {submitError && (
+                <div className="rounded-md p-4" style={{ backgroundColor: 'var(--accent-danger)', color: 'var(--background-panel)' }}>
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-5 w-5" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium">{submitError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Terms and Conditions */}
               <div className="flex items-center">
@@ -224,10 +300,11 @@ export default function SignupPage() {
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  disabled={loading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ color: 'var(--background-deep)', backgroundColor: 'var(--accent-interactive)' }}
                 >
-                  Create account
+                  {loading ? 'Creating account...' : 'Create account'}
                 </button>
               </div>
             </form>

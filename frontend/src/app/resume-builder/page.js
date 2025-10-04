@@ -55,8 +55,16 @@ export default function ResumeBuilderPage() {
     changeTemplate,
     saveResume,
     importFromProfile,
-    getCompletionPercentage
+    getCompletionPercentage,
+    initializeNewUserResume
   } = useResumeStore();
+  
+  // Initialize resume for new users
+  useEffect(() => {
+    if (isAuthenticated && user && !currentResume) {
+      initializeNewUserResume();
+    }
+  }, [isAuthenticated, user, currentResume, initializeNewUserResume]);
 
   const [activeSection, setActiveSection] = useState('personal');
   const [expandedSections, setExpandedSections] = useState({
@@ -145,7 +153,21 @@ export default function ResumeBuilderPage() {
     }));
   };
 
-  const completionPercentage = getCompletionPercentage();
+  const completionPercentage = currentResume ? getCompletionPercentage() : 0;
+
+  // Show loading if resume is not initialized yet
+  if (!currentResume) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background-deep)' }}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--accent-interactive)' }}></div>
+            <p style={{ color: 'var(--text-secondary)' }}>Initializing Resume Builder...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

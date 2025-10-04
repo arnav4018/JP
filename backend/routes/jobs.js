@@ -6,22 +6,13 @@ const {
     updateJob,
     deleteJob,
     getCompanies
-    // Temporarily disabled:
-    // applyToJob,
-    // getJobApplications,
-    // updateApplicationStatus,
-    // getMyApplications,
-    // getMyJobs
 } = require('../controllers/jobController');
 
-// Temporarily disabled auth and validation middleware
-// const { protect, authorize, optionalAuth } = require('../middleware/auth');
-// const {
-//     validateJobCreation,
-//     validateJobUpdate,
-//     validateObjectId,
-//     validateJobSearch
-// } = require('../middleware/validation');
+const {
+    applyToJob
+} = require('../controllers/applicationController');
+
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -39,22 +30,22 @@ router.post('/', createJob);
 router.put('/:id', updateJob);
 router.delete('/:id', deleteJob);
 
-// Job application routes - temporarily disabled
-// router.post('/:id/apply', 
-//     validateObjectId('id'),
-//     authorize('candidate'),
-//     (req, res, next) => {
-//         // Custom validation for resume
-//         if (!req.body.resume) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Resume is required'
-//             });
-//         }
-//         next();
-//     },
-//     applyToJob
-// );
+// Job application routes
+router.post('/:jobId/apply', 
+    protect,
+    authorize('candidate'),
+    (req, res, next) => {
+        // Basic validation for resume
+        if (!req.body.resume || !req.body.resume.filename) {
+            return res.status(400).json({
+                success: false,
+                message: 'Resume is required'
+            });
+        }
+        next();
+    },
+    applyToJob
+);
 
 // Application management routes - temporarily disabled
 // router.get('/:id/applications', 
