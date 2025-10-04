@@ -130,8 +130,24 @@ export default function ApplicationModal({ job, isOpen, onClose, onSuccess }) {
         setError('Failed to submit application. Please try again.');
       }
     } catch (err) {
-      setError('Failed to submit application. Please try again.');
       console.error('Application submission error:', err);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to submit application. Please try again.';
+      
+      if (err.status === 401) {
+        errorMessage = 'Please log in to submit your application.';
+      } else if (err.status === 404) {
+        errorMessage = 'Job not found. It may have been removed or is no longer available.';
+      } else if (err.status === 400) {
+        errorMessage = err.message || 'Invalid application data. Please check all required fields.';
+      } else if (err.status === 500) {
+        errorMessage = 'Server error occurred. Our team has been notified. Please try again later.';
+      } else if (err.message && err.message.includes('Network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
