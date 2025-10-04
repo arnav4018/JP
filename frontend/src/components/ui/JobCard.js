@@ -168,7 +168,7 @@ function JobCard({ job }) {
             Save
           </button>
           <Link
-            href={`/jobs/${transformedJob.id}/apply`}
+            href={`/jobs/${transformedJob.id}`}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--accent-interactive)', color: 'var(--background-deep)' }}
           >
