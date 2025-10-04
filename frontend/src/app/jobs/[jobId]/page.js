@@ -37,9 +37,16 @@ export default function JobDetailsPage() {
   // Initialize auth
   useEffect(() => {
     const initAuth = async () => {
-      await authService.waitForInitialization();
-      setIsAuthenticated(authService.isAuthenticated());
-      setUser(authService.getCurrentUser());
+      try {
+        await authService.waitForInitialization();
+        setIsAuthenticated(authService.isAuthenticated());
+        setUser(authService.getCurrentUser());
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // Continue without authentication - user can still view job details
+        setIsAuthenticated(false);
+        setUser(null);
+      }
     };
     initAuth();
   }, []);

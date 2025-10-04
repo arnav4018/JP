@@ -30,18 +30,30 @@ export default function ApplicationModal({ job, isOpen, onClose, onSuccess }) {
   }, []);
 
   useEffect(() => {
-    if (isOpen && user) {
-      const fullName = authService.getFullName();
-      setFormData({
-        fullName: fullName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        location: user.location_city || '',
-        coverLetter: `Dear Hiring Manager,\n\nI am excited to apply for the ${job.title} position at ${job.company_name || job.company}. With my background in ${user.skills?.join(', ') || 'the relevant field'}, I believe I would be a valuable addition to your team.\n\nBest regards,\n${fullName}`,
-        resume: user.resume || null
-      });
-      setError(null);
-      setSuccess(false);
+    if (isOpen && user && job) {
+      try {
+        const fullName = authService.getFullName && typeof authService.getFullName === 'function' 
+          ? authService.getFullName() 
+          : `${user.first_name || user.firstName || ''} ${user.last_name || user.lastName || ''}`.trim();
+        
+        const jobTitle = job.title || 'this position';
+        const companyName = job.company_name || job.company || 'the company';
+        const userSkills = user.skills && Array.isArray(user.skills) ? user.skills.join(', ') : 'the relevant field';
+        
+        setFormData({
+          fullName: fullName || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          location: user.location_city || user.location || '',
+          coverLetter: `Dear Hiring Manager,\n\nI am excited to apply for the ${jobTitle} position at ${companyName}. With my background in ${userSkills}, I believe I would be a valuable addition to your team.\n\nBest regards,\n${fullName}`,
+          resume: user.resume || null
+        });
+        setError(null);
+        setSuccess(false);
+      } catch (error) {
+        console.error('Error initializing application form:', error);
+        setError('Error loading application form. Please refresh and try again.');
+      }
     }
   }, [isOpen, user, job]);
 
