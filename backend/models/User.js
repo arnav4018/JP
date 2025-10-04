@@ -163,6 +163,15 @@ class User extends BaseModel {
     }
 
     /**
+     * Verify refresh token
+     * @param {string} token - Refresh token
+     * @returns {Object} Decoded token payload
+     */
+    verifyRefreshToken(token) {
+        return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    }
+
+    /**
      * Generate email verification token
      * @param {Object} user - User object
      * @returns {Promise} Updated user with verification token

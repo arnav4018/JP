@@ -177,11 +177,63 @@ const changePassword = async (req, res) => {
 // @desc    Refresh token
 // @route   POST /api/auth/refresh-token
 // @access  Public  
-const refreshToken = async (req, res) => {
-    res.status(200).json({ 
-        success: true, 
-        message: "Token refresh not implemented yet" 
-    });
+const refreshToken = async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+        
+        if (!refreshToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'Refresh token is required'
+            });
+        }
+
+        const userModel = new User();
+        
+        // Verify refresh token
+        try {
+            const decoded = userModel.verifyRefreshToken(refreshToken);
+            
+            // Get user from database
+            const user = await userModel.getProfile(decoded.id);
+            
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid refresh token'
+                });
+            }
+            
+            // Generate new tokens
+            const newToken = userModel.generateAuthToken(user);
+            const newRefreshToken = userModel.generateRefreshToken(user);
+            
+            res.status(200).json({
+                success: true,
+                message: 'Token refreshed successfully',
+                data: {
+                    token: newToken,
+                    refreshToken: newRefreshToken,
+                    user: {
+                        id: user.id,
+                        firstName: user.first_name,
+                        lastName: user.last_name,
+                        email: user.email,
+                        role: user.role
+                    }
+                }
+            });
+            
+        } catch (tokenError) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or expired refresh token'
+            });
+        }
+        
+    } catch (error) {
+        next(error);
+    }
 };
 
 // @desc    Logout user

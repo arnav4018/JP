@@ -25,6 +25,7 @@ const router = express.Router();
 router.post('/register', validateUserRegistration, register);
 router.post('/login', validateUserLogin, login);
 router.post('/refresh-token', refreshToken);
+router.post('/logout', logout);
 router.post('/forgot-password', validateEmail, forgotPassword);
 router.put('/reset-password/:token', validatePassword, resetPassword);
 
@@ -46,6 +47,5 @@ router.put('/change-password', [
         next();
     }
 ], changePassword);
-router.post('/logout', logout);
 
 module.exports = router;
