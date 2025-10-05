@@ -76,57 +76,17 @@ export default function SignupPage() {
         baseUserData.company_name = formData.company;
       }
 
-      console.log('🚀 Attempting registration with data:', baseUserData);
-
-      // Try to use auth store register method first
-      let result;
-      try {
-        result = await register(baseUserData);
-        console.log('📋 Registration result:', result);
-      } catch (registrationError: any) {
-        console.log('⚠️ API registration failed, using demo registration:', registrationError);
-        
-        // If API registration fails (404 - endpoint not found), create demo account
-        if (registrationError.status === 404 || registrationError.type === 'NETWORK_ERROR') {
-          console.log('🎭 Creating demo account since backend registration is not available...');
-          
-          // Create demo user
-          const demoUser = {
-            id: `demo_${Date.now()}`,
-            email: baseUserData.email,
-            firstName: baseUserData.firstName,
-            lastName: baseUserData.lastName,
-            name: baseUserData.name,
-            role: baseUserData.role,
-            company: baseUserData.company || baseUserData.companyName,
-            isDemo: true,
-            createdAt: new Date().toISOString()
-          };
-          
-          // Store demo user in localStorage
-          localStorage.setItem('demoUser', JSON.stringify(demoUser));
-          localStorage.setItem('authToken', `demo_token_${Date.now()}`);
-          localStorage.setItem('user', JSON.stringify(demoUser));
-          
-          // Create success result
-          result = { success: true, user: demoUser };
-          
-          console.log('🎉 Demo account created successfully:', demoUser);
-        } else {
-          // Re-throw if it's not a 404 error
-          throw registrationError;
-        }
-      }
+      // Use auth store register method
+      const result = await register(baseUserData);
       
       if (result.success && result.user) {
         // Redirect based on user role
         const user = result.user;
-        console.log('Registration successful, user role:', user.role);
         
         if (user.role === 'admin') {
           router.push('/admin');
         } else if (user.role === 'recruiter') {
-          router.push('/post-job');
+          router.push('/admin/jobs');
         } else {
           router.push('/profile'); // Candidates go to profile completion
         }
@@ -160,8 +120,6 @@ export default function SignupPage() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
-      console.log('📊 Error details:', { type: err.type, status: err.status, message: err.message, errors: err.errors });
       
       setSubmitError(errorMessage);
     }

@@ -122,11 +122,23 @@ const getJob = async (req, res, next) => {
 // @access  Private (Recruiter/Admin only)
 const createJob = async (req, res, next) => {
     try {
+        console.log('📝 Creating job with data:', req.body);
+        console.log('👤 User:', req.user);
+        
         // Add posted by user ID
-        req.body.posted_by_recruiter_id = req.user.id;
-
+        req.body.posted_by_recruiter_id = req.user?.id;
+        
+        // Handle company - create a simple company entry if not provided
+        if (!req.body.company_id && req.body.company) {
+            // For now, use a default company_id of 1, or create logic to handle company creation
+            req.body.company_id = 1;
+            console.log('🏢 Using default company_id for:', req.body.company);
+        }
+        
         const jobModel = new Job();
         const job = await jobModel.createJob(req.body);
+        
+        console.log('✅ Job created successfully:', job.id);
 
         res.status(201).json({
             success: true,
@@ -137,6 +149,7 @@ const createJob = async (req, res, next) => {
         });
 
     } catch (error) {
+        console.error('❌ Error creating job:', error);
         next(error);
     }
 };

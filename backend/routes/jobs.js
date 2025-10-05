@@ -21,14 +21,23 @@ router.get('/', getJobs);
 router.get('/companies', getCompanies);
 router.get('/:id', getJob);
 
-// Routes for candidates and recruiters - temporarily disabled
-// router.get('/user/my-applications', authorize('candidate'), getMyApplications);
-// router.get('/user/my-jobs', authorize('recruiter', 'admin'), getMyJobs);
+// Routes for candidates and recruiters
+// router.get('/user/my-applications', protect, authorize('candidate'), getMyApplications);
+router.get('/user/my-jobs', protect, authorize('recruiter', 'admin'), (req, res) => {
+    // Temporary implementation for my jobs
+    res.status(200).json({
+        success: true,
+        count: 0,
+        data: {
+            jobs: []
+        }
+    });
+});
 
-// Job management routes - simplified for testing
-router.post('/', createJob);
-router.put('/:id', updateJob);
-router.delete('/:id', deleteJob);
+// Job management routes - with authentication
+router.post('/', protect, authorize('recruiter', 'admin'), createJob);
+router.put('/:id', protect, authorize('recruiter', 'admin'), updateJob);
+router.delete('/:id', protect, authorize('recruiter', 'admin'), deleteJob);
 
 // Job application routes
 router.post('/:jobId/apply', 
