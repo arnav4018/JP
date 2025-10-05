@@ -18,7 +18,7 @@ class Job extends BaseModel {
             location: jobData.location || 'Remote',
             salary_min: jobData.salary?.min || jobData.salary_min || null,
             salary_max: jobData.salary?.max || jobData.salary_max || null,
-            experience_level: jobData.experience_level || 'Mid Level',
+            experience_level: jobData.experience_level || 'Mid-Level',
             employment_type: jobData.employment?.type || jobData.employment_type || 'full-time',
             is_remote: jobData.location?.isRemote || jobData.is_remote || false,
             posted_by_recruiter_id: jobData.postedBy || jobData.posted_by_recruiter_id,
@@ -154,8 +154,8 @@ class Job extends BaseModel {
             job.requirements = [];
             job.benefits = [];
             job.skills_required = [];
-            job.employment_type = job.employment_type || 'Full-time';
-            job.experience_level = job.experience_level || 'Mid Level';
+            job.employment_type = job.employment_type || 'full-time';
+            job.experience_level = job.experience_level || 'Mid-Level';
             job.is_remote = job.is_remote || false;
             job.status = job.status || 'active';
             job.views = job.views || 0;
