@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/store/useAuthStore';
+import API from '@/services/api';
 import { 
   MapPin, 
   DollarSign, 
@@ -99,11 +100,42 @@ export default function PostJob() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      // Prepare job data for API
+      const jobData = {
+        title: formData.title,
+        company: formData.company,
+        location: formData.location,
+        type: formData.type,
+        salary: formData.salary,
+        description: formData.description,
+        requirements: formData.requirements,
+        benefits: formData.benefits,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        applicationDeadline: formData.applicationDeadline,
+        isFeatured: formData.isFeatured
+      };
+
+      // Call API to create job
+      const response = await API.jobs.create(jobData);
+      
+      if (response.success !== false) {
+        // Job created successfully
+        console.log('Job posted successfully:', response);
+        
+        // Redirect to My Jobs page to see the posted job
+        router.push('/admin/jobs?posted=true');
+      } else {
+        // Handle API error
+        console.error('Failed to post job:', response.message);
+        alert('Failed to post job: ' + (response.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error posting job:', error);
+      alert('Failed to post job: ' + (error.message || 'Network error. Please try again.'));
+    } finally {
       setIsSubmitting(false);
-      router.push('/jobs');
-    }, 2000);
+    }
   };
 
   return (

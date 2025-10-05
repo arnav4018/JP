@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/useAuthStore';
+import API from '@/services/api';
 import { 
   Search,
   Filter,
@@ -84,110 +85,70 @@ export default function JobManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Mock job data - in real app, this would come from API
+  // Load jobs from API
   useEffect(() => {
-    const mockJobs = [
-      {
-        id: 1,
-        title: 'Senior React Developer',
-        company: 'TechCorp Inc.',
-        company_id: 101,
-        location: 'San Francisco, CA',
-        type: 'full-time',
-        salary: '$120,000 - $150,000',
-        status: 'pending',
-        created_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        applications: 12,
-        views: 456,
-        is_featured: true,
-        is_flagged: false,
-        description: 'We are looking for a Senior React Developer to join our growing team...',
-        requirements: 'React, TypeScript, Node.js, 5+ years experience',
-        posted_by: 'John Smith',
-        posted_by_email: 'john@techcorp.com'
-      },
-      {
-        id: 2,
-        title: 'Product Manager',
-        company: 'StartupCo',
-        company_id: 102,
-        location: 'Remote',
-        type: 'full-time',
-        salary: '$90,000 - $120,000',
-        status: 'approved',
-        created_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        applications: 28,
-        views: 892,
-        is_featured: false,
-        is_flagged: false,
-        description: 'Join our product team and help shape the future of our platform...',
-        requirements: 'Product management experience, Agile, Analytics tools',
-        posted_by: 'Sarah Johnson',
-        posted_by_email: 'sarah@startupco.com'
-      },
-      {
-        id: 3,
-        title: 'Data Scientist',
-        company: 'DataFlow Solutions',
-        company_id: 103,
-        location: 'New York, NY',
-        type: 'full-time',
-        salary: '$110,000 - $140,000',
-        status: 'approved',
-        created_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        applications: 18,
-        views: 634,
-        is_featured: true,
-        is_flagged: false,
-        description: 'We are seeking a talented Data Scientist to join our analytics team...',
-        requirements: 'Python, Machine Learning, SQL, Statistics background',
-        posted_by: 'Mike Wilson',
-        posted_by_email: 'mike@dataflow.com'
-      },
-      {
-        id: 4,
-        title: 'Frontend Developer',
-        company: 'WebStudio',
-        company_id: 104,
-        location: 'Austin, TX',
-        type: 'part-time',
-        salary: '$60,000 - $80,000',
-        status: 'rejected',
-        created_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-        applications: 5,
-        views: 123,
-        is_featured: false,
-        is_flagged: true,
-        description: 'Looking for a part-time frontend developer...',
-        requirements: 'HTML, CSS, JavaScript, React basics',
-        posted_by: 'Lisa Chen',
-        posted_by_email: 'lisa@webstudio.com',
-        rejection_reason: 'Incomplete job description and requirements'
-      },
-      {
-        id: 5,
-        title: 'DevOps Engineer',
-        company: 'CloudTech Ltd',
-        company_id: 105,
-        location: 'Seattle, WA',
-        type: 'contract',
-        salary: '$80 - $100/hour',
-        status: 'pending',
-        created_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        applications: 3,
-        views: 89,
-        is_featured: false,
-        is_flagged: false,
-        description: 'Contract position for DevOps Engineer...',
-        requirements: 'AWS, Docker, Kubernetes, CI/CD experience',
-        posted_by: 'Tom Anderson',
-        posted_by_email: 'tom@cloudtech.com'
+    const loadJobs = async () => {
+      if (!isAuthenticated || !user) return;
+      
+      setLoading(true);
+      try {
+        // Fetch jobs posted by the current recruiter
+        const response = await API.jobs.getMyJobs();
+        
+        // Handle different response formats
+        let jobsData = [];
+        if (response.success !== false) {
+          jobsData = response.data?.jobs || response.jobs || response.data || response || [];
+        }
+        
+        // Transform data to match expected format
+        const formattedJobs = jobsData.map(job => ({
+          ...job,
+          created_date: new Date(job.createdAt || job.created_date || job.createdDate || Date.now()),
+          applications: job.applicationsCount || job.applications?.length || 0,
+          views: job.viewsCount || job.views || 0,
+          is_featured: job.isFeatured || job.is_featured || false,
+          is_flagged: job.isFlagged || job.is_flagged || false,
+          status: job.status || 'pending',
+          posted_by: user?.name || user?.firstName + ' ' + user?.lastName || 'Unknown',
+          posted_by_email: user?.email || 'unknown@email.com'
+        }));
+        
+        setJobs(formattedJobs);
+        setFilteredJobs(formattedJobs);
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+        
+        // Fallback: Show some mock data if API fails
+        const fallbackJobs = [
+          {
+            id: 'temp-1',
+            title: 'No Jobs Found',
+            company: user?.company || 'Your Company',
+            location: 'N/A',
+            type: 'full-time',
+            salary: 'Not specified',
+            status: 'pending',
+            created_date: new Date(),
+            applications: 0,
+            views: 0,
+            is_featured: false,
+            is_flagged: false,
+            description: 'You haven\'t posted any jobs yet. Click "Post New Job" to get started.',
+            requirements: 'None',
+            posted_by: user?.name || 'You',
+            posted_by_email: user?.email || 'your@email.com'
+          }
+        ];
+        setJobs(fallbackJobs);
+        setFilteredJobs(fallbackJobs);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
     
-    setJobs(mockJobs);
-    setFilteredJobs(mockJobs);
-  }, []);
+    loadJobs();
+  }, [isAuthenticated, user]);
 
   // Filter and search jobs
   useEffect(() => {
