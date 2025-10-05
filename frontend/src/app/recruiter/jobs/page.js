@@ -34,6 +34,7 @@ export default function RecruiterJobsPage() {
   const [filter, setFilter] = useState('all'); // all, active, paused, closed
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
     if (!authLoading) {
@@ -53,6 +54,16 @@ export default function RecruiterJobsPage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       loadJobs();
+      
+      // Check for success message from URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('posted') === 'true') {
+        setSuccessMessage('Job posted successfully!');
+        // Clear the URL params without refreshing the page
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Clear the message after 5 seconds
+        setTimeout(() => setSuccessMessage(null), 5000);
+      }
     }
   }, [isAuthenticated, user]);
 
@@ -71,13 +82,27 @@ export default function RecruiterJobsPage() {
       try {
         const fallbackJobs = JSON.parse(localStorage.getItem('fallbackJobs') || '[]');
         
-        // Filter jobs for current user if we have user email
-        const userJobs = fallbackJobs.filter(job => 
-          job.posted_by_email === user?.email || 
-          job.posted_by === user?.name ||
-          job.posted_by === `${user?.firstName} ${user?.lastName}`
-        );
+        console.log('Fallback jobs from localStorage:', fallbackJobs);
+        console.log('Current user:', user);
         
+        // Filter jobs for current user with improved matching
+        const userJobs = fallbackJobs.filter(job => {
+          const userEmail = user?.email;
+          const userName = user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+          
+          const matches = 
+            job.posted_by_email === userEmail ||
+            job.posted_by === userName ||
+            job.posted_by === user?.name ||
+            job.posted_by === `${user?.firstName} ${user?.lastName}` ||
+            // Also check if job was posted by the same user (for cases where user data format might be different)
+            (userEmail && job.posted_by_email && job.posted_by_email.toLowerCase() === userEmail.toLowerCase());
+            
+          console.log(`Job: ${job.title}, Posted by: ${job.posted_by_email}, Matches: ${matches}`);
+          return matches;
+        });
+        
+        console.log('Filtered user jobs:', userJobs);
         setJobs(userJobs);
         
         if (userJobs.length === 0) {
@@ -93,7 +118,15 @@ export default function RecruiterJobsPage() {
   };
 
   const filteredJobs = jobs.filter(job => {
-    const matchesFilter = filter === 'all' || job.status === filter;
+    let matchesFilter = false;
+    if (filter === 'all') {
+      matchesFilter = true;
+    } else if (filter === 'active') {
+      matchesFilter = job.status === 'active' || job.status === 'approved';
+    } else {
+      matchesFilter = job.status === filter;
+    }
+    
     const matchesSearch = !searchQuery || 
       job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.company?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -142,6 +175,16 @@ export default function RecruiterJobsPage() {
       <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--background-deep)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-4 rounded-lg border" style={{ backgroundColor: 'rgb(34, 197, 94, 0.1)', borderColor: 'rgb(34, 197, 94)', color: 'rgb(34, 197, 94)' }}>
+              <div className="flex items-center space-x-2">
+                <Eye className="h-5 w-5" />
+                <span className="font-medium">{successMessage}</span>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -207,6 +250,22 @@ export default function RecruiterJobsPage() {
                   <option value="closed">Closed</option>
                 </select>
               </div>
+              
+              {/* Refresh Button */}
+              <div>
+                <button
+                  onClick={loadJobs}
+                  disabled={loading}
+                  className="px-4 py-2 border rounded-lg font-medium text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
+                  style={{
+                    backgroundColor: 'var(--background-deep)',
+                    borderColor: 'var(--accent-subtle)',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  {loading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -227,7 +286,7 @@ export default function RecruiterJobsPage() {
                 <Eye className="h-8 w-8" style={{ color: 'rgb(34, 197, 94)' }} />
                 <div className="ml-4">
                   <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                    {jobs.filter(job => job.status === 'active').length}
+                    {jobs.filter(job => job.status === 'active' || job.status === 'approved').length}
                   </p>
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Active Jobs</p>
                 </div>
