@@ -36,8 +36,38 @@ import {
 import Link from 'next/link';
 
 export default function JobManagementPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
+  
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login?redirect=' + encodeURIComponent('/admin/jobs'));
+        return;
+      }
+      
+      // Check if user is recruiter or admin
+      if (user && !['recruiter', 'admin'].includes(user.role)) {
+        router.push('/');
+        return;
+      }
+    }
+  }, [isAuthenticated, authLoading, user, router]);
+  
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background-deep)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--accent-interactive)' }}></div>
+      </div>
+    );
+  }
+  
+  // Don't render if not authenticated or wrong role
+  if (!isAuthenticated || (user && !['recruiter', 'admin'].includes(user.role))) {
+    return null;
+  }
   
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);

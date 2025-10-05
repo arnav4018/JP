@@ -106,7 +106,10 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <NavLink href="/jobs">Find Jobs</NavLink>
+            {/* Show Find Jobs only for candidates or unauthenticated users */}
+            {(!isAuthenticated || user?.role === 'candidate') && (
+              <NavLink href="/jobs">Find Jobs</NavLink>
+            )}
             <NavLink href="/companies">Companies</NavLink>
             {isAuthenticated && (
               <>
@@ -440,9 +443,12 @@ export default function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t py-4" style={{ borderColor: 'var(--accent-subtle)' }}>
             <div className="space-y-2">
-              <MobileNavLink href="/jobs" onClick={() => setIsMobileMenuOpen(false)}>
-                Find Jobs
-              </MobileNavLink>
+              {/* Show Find Jobs only for candidates or unauthenticated users */}
+              {(!isAuthenticated || user?.role === 'candidate') && (
+                <MobileNavLink href="/jobs" onClick={() => setIsMobileMenuOpen(false)}>
+                  Find Jobs
+                </MobileNavLink>
+              )}
               <MobileNavLink href="/companies" onClick={() => setIsMobileMenuOpen(false)}>
                 Companies
               </MobileNavLink>

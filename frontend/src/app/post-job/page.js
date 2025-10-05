@@ -46,11 +46,19 @@ export default function PostJob() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login?redirect=' + encodeURIComponent('/post-job'));
-      return;
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login?redirect=' + encodeURIComponent('/post-job'));
+        return;
+      }
+      
+      // Check if user is recruiter or admin
+      if (user && !['recruiter', 'admin'].includes(user.role)) {
+        router.push('/');
+        return;
+      }
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, user, router]);
 
   if (authLoading) {
     return (
@@ -62,8 +70,8 @@ export default function PostJob() {
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Will redirect to login
+  if (!isAuthenticated || (user && !['recruiter', 'admin'].includes(user.role))) {
+    return null; // Will redirect to login or home page
   }
 
   const handleInputChange = (e) => {
