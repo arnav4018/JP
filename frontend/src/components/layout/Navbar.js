@@ -306,7 +306,7 @@ export default function Navbar() {
                           </Link>
                           
                           <Link
-                            href="/admin/jobs"
+                            href="/recruiter/jobs"
                             className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
                             style={{ color: 'var(--text-secondary)' }}
                             onMouseEnter={(e) => {
@@ -513,7 +513,7 @@ export default function Navbar() {
                           Post Job
                         </MobileNavLink>
                         
-                        <MobileNavLink href="/admin/jobs" onClick={() => setIsMobileMenuOpen(false)}>
+                        <MobileNavLink href="/recruiter/jobs" onClick={() => setIsMobileMenuOpen(false)}>
                           My Jobs
                         </MobileNavLink>
                       </>

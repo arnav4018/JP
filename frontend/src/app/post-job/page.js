@@ -124,7 +124,7 @@ export default function PostJob() {
         console.log('Job posted successfully:', response);
         
         // Redirect to My Jobs page to see the posted job
-        router.push('/admin/jobs?posted=true');
+        router.push('/recruiter/jobs?posted=true');
       } else {
         // Handle API error
         console.error('Failed to post job:', response.message);
@@ -162,7 +162,7 @@ export default function PostJob() {
         alert('Job posted successfully! (Using local storage as API is unavailable)');
         
         // Redirect to My Jobs page
-        router.push('/admin/jobs?posted=true&fallback=true');
+        router.push('/recruiter/jobs?posted=true&fallback=true');
         return;
         
       } catch (fallbackError) {
