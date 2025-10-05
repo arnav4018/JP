@@ -65,7 +65,12 @@ export default function ProfilePage() {
                       : user.name || 'User'
                     }
                   </h1>
-                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>{user.profile?.title || 'Job Seeker'}</p>
+                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
+                    {user.role === 'recruiter' 
+                      ? (user.companyName || user.company_name || user.profile?.title || 'Recruiter')
+                      : (user.profile?.title || 'Job Seeker')
+                    }
+                  </p>
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
                 </div>
                 <div className="mt-4 sm:mt-0 flex space-x-3">
@@ -73,22 +78,47 @@ export default function ProfilePage() {
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit Profile
                   </button>
-                  <Link
-                    href="/resume-builder"
-                    className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
-                  >
-                    <PenTool className="h-4 w-4 mr-2" />
-                    Resume Builder
-                  </Link>
-                  <Link
-                    href="/applications"
-                    className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Applications
-                  </Link>
+                  
+                  {/* Role-specific buttons */}
+                  {user.role === 'candidate' ? (
+                    <>
+                      <Link
+                        href="/resume-builder"
+                        className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
+                      >
+                        <PenTool className="h-4 w-4 mr-2" />
+                        Resume Builder
+                      </Link>
+                      <Link
+                        href="/applications"
+                        className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Applications
+                      </Link>
+                    </>
+                  ) : user.role === 'recruiter' ? (
+                    <>
+                      <Link
+                        href="/post-job"
+                        className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
+                      >
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        Post New Job
+                      </Link>
+                      <Link
+                        href="/admin/jobs"
+                        className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        My Jobs
+                      </Link>
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -112,19 +142,22 @@ export default function ProfilePage() {
                   Profile
                 </button>
                 
-                <button
-                  onClick={() => setActiveTab('searches')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors ${
-                    activeTab === 'searches' ? 'border-b-2' : 'hover:opacity-80'
-                  }`}
-                  style={{
-                    borderBottomColor: activeTab === 'searches' ? 'var(--accent-interactive)' : 'transparent',
-                    color: activeTab === 'searches' ? 'var(--accent-interactive)' : 'var(--text-secondary)'
-                  }}
-                >
-                  <Bookmark className="h-4 w-4 inline mr-2" />
-                  Saved Searches
-                </button>
+                {/* Show saved searches tab only for candidates */}
+                {user.role === 'candidate' && (
+                  <button
+                    onClick={() => setActiveTab('searches')}
+                    className={`px-6 py-4 text-sm font-medium transition-colors ${
+                      activeTab === 'searches' ? 'border-b-2' : 'hover:opacity-80'
+                    }`}
+                    style={{
+                      borderBottomColor: activeTab === 'searches' ? 'var(--accent-interactive)' : 'transparent',
+                      color: activeTab === 'searches' ? 'var(--accent-interactive)' : 'var(--text-secondary)'
+                    }}
+                  >
+                    <Bookmark className="h-4 w-4 inline mr-2" />
+                    Saved Searches
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -169,62 +202,139 @@ export default function ProfilePage() {
               <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-panel)' }}>
                 <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Quick Actions</h3>
                 <div className="space-y-3">
-                  <Link
-                    href="/applications"
-                    className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Briefcase className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>View Applications</div>
-                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Track your job applications</div>
-                      </div>
-                    </div>
-                  </Link>
+                  {user.role === 'candidate' ? (
+                    <>
+                      <Link
+                        href="/applications"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Briefcase className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>View Applications</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Track your job applications</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        href="/jobs"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Briefcase className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Browse Jobs</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Find new opportunities</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        href="/resume-builder"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <PenTool className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Resume Builder</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Create professional resumes</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        href="/profile/resumes"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>My Resumes</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>View and manage resumes</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <button
+                        onClick={() => setActiveTab('searches')}
+                        className="w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Bookmark className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Saved Searches</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Quick access to your searches</div>
+                          </div>
+                        </div>
+                      </button>
+                    </>
+                  ) : user.role === 'recruiter' ? (
+                    <>
+                      <Link
+                        href="/post-job"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Briefcase className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Post New Job</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Create a new job posting</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        href="/admin/jobs"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>My Jobs</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Manage your job postings</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        href="/jobs"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Users className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Find Candidates</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Search for potential candidates</div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        href="/pricing"
+                        className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
+                        style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Settings className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Pricing Plans</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>View and upgrade plans</div>
+                          </div>
+                        </div>
+                      </Link>
+                    </>
+                  ) : null}
                   
-                  <Link
-                    href="/jobs"
-                    className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Briefcase className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Browse Jobs</div>
-                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Find new opportunities</div>
-                      </div>
-                    </div>
-                  </Link>
-                  
-                  <Link
-                    href="/resume-builder"
-                    className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <PenTool className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Resume Builder</div>
-                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Create professional resumes</div>
-                      </div>
-                    </div>
-                  </Link>
-                  
-                  <Link
-                    href="/profile/resumes"
-                    className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <FileText className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>My Resumes</div>
-                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>View and manage resumes</div>
-                      </div>
-                    </div>
-                  </Link>
-                  
+                  {/* Common actions for all roles */}
                   <Link
                     href="/referrals"
                     className="block w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
@@ -238,20 +348,6 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </Link>
-                  
-                  <button
-                    onClick={() => setActiveTab('searches')}
-                    className="w-full text-left px-4 py-3 rounded-lg border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent-subtle)', backgroundColor: 'var(--background-deep)' }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Bookmark className="h-5 w-5" style={{ color: 'var(--accent-interactive)' }} />
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Saved Searches</div>
-                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Quick access to your searches</div>
-                      </div>
-                    </div>
-                  </button>
                 </div>
               </div>
             </div>

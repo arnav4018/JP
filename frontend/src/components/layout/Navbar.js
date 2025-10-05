@@ -130,7 +130,13 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <>
-                <NavLink href="/applications" className="whitespace-nowrap">My Applications</NavLink>
+                {/* Role-specific navigation */}
+                {user?.role === 'candidate' && (
+                  <NavLink href="/applications" className="whitespace-nowrap">My Applications</NavLink>
+                )}
+                {user?.role === 'recruiter' && (
+                  <NavLink href="/post-job" className="whitespace-nowrap">Post Job</NavLink>
+                )}
                 
                 {/* Live Chat Button */}
                 <button
@@ -235,41 +241,86 @@ export default function Navbar() {
                         <span>Profile Settings</span>
                       </Link>
                       
-                      <Link
-                        href="/applications"
-                        className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
-                        style={{ color: 'var(--text-secondary)' }}
-                        onMouseEnter={(e) => {
-                          e.target.style.color = 'var(--accent-interactive)';
-                          e.target.style.backgroundColor = 'var(--accent-subtle)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.color = 'var(--text-secondary)';
-                          e.target.style.backgroundColor = 'transparent';
-                        }}
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span>My Applications</span>
-                      </Link>
+                      {/* Role-specific menu items */}
+                      {user?.role === 'candidate' && (
+                        <>
+                          <Link
+                            href="/applications"
+                            className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
+                            style={{ color: 'var(--text-secondary)' }}
+                            onMouseEnter={(e) => {
+                              e.target.style.color = 'var(--accent-interactive)';
+                              e.target.style.backgroundColor = 'var(--accent-subtle)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.color = 'var(--text-secondary)';
+                              e.target.style.backgroundColor = 'transparent';
+                            }}
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span>My Applications</span>
+                          </Link>
+                          
+                          <Link
+                            href="/profile/resumes"
+                            className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
+                            style={{ color: 'var(--text-secondary)' }}
+                            onMouseEnter={(e) => {
+                              e.target.style.color = 'var(--accent-interactive)';
+                              e.target.style.backgroundColor = 'var(--accent-subtle)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.color = 'var(--text-secondary)';
+                              e.target.style.backgroundColor = 'transparent';
+                            }}
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <PenTool className="h-4 w-4" />
+                            <span>My Resumes</span>
+                          </Link>
+                        </>
+                      )}
                       
-                      <Link
-                        href="/profile/resumes"
-                        className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
-                        style={{ color: 'var(--text-secondary)' }}
-                        onMouseEnter={(e) => {
-                          e.target.style.color = 'var(--accent-interactive)';
-                          e.target.style.backgroundColor = 'var(--accent-subtle)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.color = 'var(--text-secondary)';
-                          e.target.style.backgroundColor = 'transparent';
-                        }}
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <PenTool className="h-4 w-4" />
-                        <span>My Resumes</span>
-                      </Link>
+                      {user?.role === 'recruiter' && (
+                        <>
+                          <Link
+                            href="/post-job"
+                            className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
+                            style={{ color: 'var(--text-secondary)' }}
+                            onMouseEnter={(e) => {
+                              e.target.style.color = 'var(--accent-interactive)';
+                              e.target.style.backgroundColor = 'var(--accent-subtle)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.color = 'var(--text-secondary)';
+                              e.target.style.backgroundColor = 'transparent';
+                            }}
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <Briefcase className="h-4 w-4" />
+                            <span>Post Job</span>
+                          </Link>
+                          
+                          <Link
+                            href="/admin/jobs"
+                            className="flex items-center space-x-3 px-4 py-2 text-sm transition-colors hover:opacity-80"
+                            style={{ color: 'var(--text-secondary)' }}
+                            onMouseEnter={(e) => {
+                              e.target.style.color = 'var(--accent-interactive)';
+                              e.target.style.backgroundColor = 'var(--accent-subtle)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.color = 'var(--text-secondary)';
+                              e.target.style.backgroundColor = 'transparent';
+                            }}
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span>My Jobs</span>
+                          </Link>
+                        </>
+                      )}
                       
                       <Link
                         href="/referrals"
@@ -437,13 +488,30 @@ export default function Navbar() {
                       </div>
                     </div>
                     
-                    <MobileNavLink href="/applications" onClick={() => setIsMobileMenuOpen(false)}>
-                      My Applications
-                    </MobileNavLink>
+                    {/* Role-specific mobile menu items */}
+                    {user?.role === 'candidate' && (
+                      <>
+                        <MobileNavLink href="/applications" onClick={() => setIsMobileMenuOpen(false)}>
+                          My Applications
+                        </MobileNavLink>
+                        
+                        <MobileNavLink href="/profile/resumes" onClick={() => setIsMobileMenuOpen(false)}>
+                          My Resumes
+                        </MobileNavLink>
+                      </>
+                    )}
                     
-                    <MobileNavLink href="/profile/resumes" onClick={() => setIsMobileMenuOpen(false)}>
-                      My Resumes
-                    </MobileNavLink>
+                    {user?.role === 'recruiter' && (
+                      <>
+                        <MobileNavLink href="/post-job" onClick={() => setIsMobileMenuOpen(false)}>
+                          Post Job
+                        </MobileNavLink>
+                        
+                        <MobileNavLink href="/admin/jobs" onClick={() => setIsMobileMenuOpen(false)}>
+                          My Jobs
+                        </MobileNavLink>
+                      </>
+                    )}
                     
                     <MobileNavLink href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
                       Profile Settings
