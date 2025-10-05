@@ -152,6 +152,44 @@ async function setupDatabase(closePool = false) {
             
             await pool.query(createJobsTable);
             console.log('✅ Jobs table created successfully');
+        } else {
+            console.log('✅ Jobs table already exists');
+            
+            // Check and add missing columns if table exists but is incomplete
+            console.log('🔧 Checking for missing columns in jobs table...');
+            const jobColumnsQuery = `
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'jobs' AND table_schema = 'public'
+            `;
+            const jobColumnsResult = await pool.query(jobColumnsQuery);
+            const jobColumns = jobColumnsResult.rows.map(row => row.column_name);
+            
+            const requiredJobColumns = [
+                { name: 'employment_type', type: 'VARCHAR(50) DEFAULT \'full-time\'' },
+                { name: 'experience_level', type: 'VARCHAR(100)' },
+                { name: 'is_remote', type: 'BOOLEAN DEFAULT FALSE' },
+                { name: 'requirements', type: 'TEXT' },
+                { name: 'benefits', type: 'TEXT' },
+                { name: 'skills_required', type: 'TEXT' },
+                { name: 'application_deadline', type: 'TIMESTAMP' },
+                { name: 'views', type: 'INTEGER DEFAULT 0' },
+                { name: 'is_urgent', type: 'BOOLEAN DEFAULT FALSE' },
+                { name: 'is_featured', type: 'BOOLEAN DEFAULT FALSE' },
+                { name: 'status', type: 'VARCHAR(50) DEFAULT \'active\'' },
+                { name: 'posted_at', type: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' }
+            ];
+            
+            for (const col of requiredJobColumns) {
+                if (!jobColumns.includes(col.name)) {
+                    try {
+                        await pool.query(`ALTER TABLE jobs ADD COLUMN ${col.name} ${col.type}`);
+                        console.log(`✅ Added column '${col.name}' to jobs table`);
+                    } catch (err) {
+                        console.log(`⚠️  Could not add column '${col.name}': ${err.message}`);
+                    }
+                }
+            }
         }
 
         // Check if applications table exists and create if needed
