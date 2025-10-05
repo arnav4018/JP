@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // @access  Public
 const register = async (req, res, next) => {
     try {
-        const { firstName, lastName, email, password, role, phone } = req.body;
+        const { firstName, lastName, email, password, role, phone, companyName } = req.body;
 
         const userModel = new User();
         
@@ -31,6 +31,11 @@ const register = async (req, res, next) => {
         if (phone) {
             userData.phone = phone;
         }
+        
+        // Add company name for recruiters
+        if (role === 'recruiter' && companyName) {
+            userData.companyName = companyName;
+        }
 
         // Create user
         const user = await userModel.createUser(userData);
@@ -50,7 +55,8 @@ const register = async (req, res, next) => {
                     firstName: user.first_name,
                     lastName: user.last_name,
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    companyName: user.company_name
                 }
             }
         });
@@ -108,7 +114,8 @@ const login = async (req, res, next) => {
                     firstName: user.first_name,
                     lastName: user.last_name,
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    companyName: user.company_name
                 }
             }
         });
@@ -219,7 +226,8 @@ const refreshToken = async (req, res, next) => {
                         firstName: user.first_name,
                         lastName: user.last_name,
                         email: user.email,
-                        role: user.role
+                        role: user.role,
+                        companyName: user.company_name
                     }
                 }
             });

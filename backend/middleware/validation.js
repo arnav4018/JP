@@ -63,6 +63,18 @@ const validateUserRegistration = [
         .matches(/^\+?[\d\s\-\(\)]+$/)
         .withMessage('Please enter a valid phone number'),
     
+    body('companyName')
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage('Company name must be between 2 and 100 characters')
+        .custom((value, { req }) => {
+            if (req.body.role === 'recruiter' && !value) {
+                throw new Error('Company name is required for recruiters');
+            }
+            return true;
+        }),
+    
     handleValidationErrors
 ];
 

@@ -29,6 +29,15 @@ class User extends BaseModel {
             password_hash: userData.password_hash,
             role: userData.role || 'candidate'
         };
+        
+        // Add optional fields if provided
+        if (userData.phone) {
+            userToCreate.phone = userData.phone;
+        }
+        
+        if (userData.companyName) {
+            userToCreate.company_name = userData.companyName;
+        }
 
         return await this.create(userToCreate);
     }
