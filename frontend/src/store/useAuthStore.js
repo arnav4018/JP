@@ -20,21 +20,43 @@ export const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const response = await API.auth.login(email, password);
-          if (response.success && response.data) {
+          console.log('API login response:', response);
+          
+          // Handle different response formats
+          let user, token, refreshToken;
+          let success = false;
+          
+          if (response.success || response.token) {
+            // Format 1: response.data.user, response.data.token
+            if (response.data) {
+              user = response.data.user;
+              token = response.data.token;
+              refreshToken = response.data.refreshToken;
+            } 
+            // Format 2: response.user, response.token (direct)
+            else {
+              user = response.user;
+              token = response.token;
+              refreshToken = response.refreshToken;
+            }
+            success = true;
+          }
+          
+          if (success && user && token) {
             // Store tokens in localStorage
-            tokenManager.setToken(response.data.token);
-            if (response.data.refreshToken) {
-              tokenManager.setRefreshToken(response.data.refreshToken);
+            tokenManager.setToken(token);
+            if (refreshToken) {
+              tokenManager.setRefreshToken(refreshToken);
             }
             
             set({
-              user: response.data.user,
-              token: response.data.token,
+              user: user,
+              token: token,
               isAuthenticated: true,
               loading: false,
               error: null
             });
-            return { success: true, user: response.data.user };
+            return { success: true, user: user };
           } else {
             const errorMessage = response.message || 'Login failed';
             set({ loading: false, error: errorMessage });
@@ -51,21 +73,43 @@ export const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const response = await API.auth.register(userData);
-          if (response.success && response.data) {
+          console.log('API register response:', response);
+          
+          // Handle different response formats
+          let user, token, refreshToken;
+          let success = false;
+          
+          if (response.success || response.token) {
+            // Format 1: response.data.user, response.data.token
+            if (response.data) {
+              user = response.data.user;
+              token = response.data.token;
+              refreshToken = response.data.refreshToken;
+            } 
+            // Format 2: response.user, response.token (direct)
+            else {
+              user = response.user;
+              token = response.token;
+              refreshToken = response.refreshToken;
+            }
+            success = true;
+          }
+          
+          if (success && user && token) {
             // Store tokens in localStorage
-            tokenManager.setToken(response.data.token);
-            if (response.data.refreshToken) {
-              tokenManager.setRefreshToken(response.data.refreshToken);
+            tokenManager.setToken(token);
+            if (refreshToken) {
+              tokenManager.setRefreshToken(refreshToken);
             }
             
             set({
-              user: response.data.user,
-              token: response.data.token,
+              user: user,
+              token: token,
               isAuthenticated: true,
               loading: false,
               error: null
             });
-            return { success: true, user: response.data.user };
+            return { success: true, user: user };
           } else {
             const errorMessage = response.message || 'Registration failed';
             set({ loading: false, error: errorMessage });

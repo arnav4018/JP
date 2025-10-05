@@ -28,8 +28,28 @@ export default function SignupPage() {
     setSubmitError(null);
 
     // Basic validation
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      setSubmitError('Please fill in your first and last name');
+      return;
+    }
+    
+    if (!formData.email.trim()) {
+      setSubmitError('Please enter a valid email address');
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      setSubmitError('Password must be at least 6 characters long');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setSubmitError('Passwords do not match');
+      return;
+    }
+    
+    if (userType === 'recruiter' && !formData.company.trim()) {
+      setSubmitError('Company name is required for recruiters');
       return;
     }
 
@@ -51,15 +71,40 @@ export default function SignupPage() {
       // Use auth store register method
       const result = await register(userData);
       
-      if (result.success) {
-        // Redirect to profile completion or dashboard
-        router.push('/profile');
+      if (result.success && result.user) {
+        // Redirect based on user role
+        const user = result.user;
+        console.log('Registration successful, user role:', user.role);
+        
+        if (user.role === 'admin') {
+          router.push('/admin');
+        } else if (user.role === 'recruiter') {
+          router.push('/post-job');
+        } else {
+          router.push('/profile'); // Candidates go to profile completion
+        }
       } else {
         setSubmitError(result.error || 'Registration failed');
       }
     } catch (err: any) {
       console.error('Signup error:', err);
-      setSubmitError(err.message || 'Registration failed. Please check your information and try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (err.message) {
+        if (err.message.includes('Network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (err.message.includes('email') && err.message.includes('exists')) {
+          errorMessage = 'An account with this email already exists. Please try signing in instead.';
+        } else if (err.message.includes('validation')) {
+          errorMessage = 'Please check your information and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setSubmitError(errorMessage);
     }
   };
 

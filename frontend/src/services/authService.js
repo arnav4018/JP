@@ -86,13 +86,35 @@ class AuthService {
     try {
       const response = await API.auth.register(userData);
       
-      if (response.success && response.token) {
-        tokenManager.setToken(response.token);
-        if (response.refreshToken) {
-          tokenManager.setRefreshToken(response.refreshToken);
+      // Handle different response formats
+      let success = false;
+      let token = null;
+      let refreshToken = null;
+      let user = null;
+      
+      if (response.success || response.token) {
+        success = true;
+        // Format 1: response.data.user, response.data.token
+        if (response.data) {
+          user = response.data.user;
+          token = response.data.token;
+          refreshToken = response.data.refreshToken;
+        } 
+        // Format 2: response.user, response.token (direct)
+        else {
+          user = response.user;
+          token = response.token;
+          refreshToken = response.refreshToken;
+        }
+      }
+      
+      if (success && token && user) {
+        tokenManager.setToken(token);
+        if (refreshToken) {
+          tokenManager.setRefreshToken(refreshToken);
         }
         
-        this.currentUser = response.user;
+        this.currentUser = user;
         this._saveUserToStorage(this.currentUser);
         
         return {
@@ -126,13 +148,35 @@ class AuthService {
     try {
       const response = await API.auth.login(email, password);
       
-      if (response.success && response.token) {
-        tokenManager.setToken(response.token);
-        if (response.refreshToken) {
-          tokenManager.setRefreshToken(response.refreshToken);
+      // Handle different response formats
+      let success = false;
+      let token = null;
+      let refreshToken = null;
+      let user = null;
+      
+      if (response.success || response.token) {
+        success = true;
+        // Format 1: response.data.user, response.data.token
+        if (response.data) {
+          user = response.data.user;
+          token = response.data.token;
+          refreshToken = response.data.refreshToken;
+        } 
+        // Format 2: response.user, response.token (direct)
+        else {
+          user = response.user;
+          token = response.token;
+          refreshToken = response.refreshToken;
+        }
+      }
+      
+      if (success && token && user) {
+        tokenManager.setToken(token);
+        if (refreshToken) {
+          tokenManager.setRefreshToken(refreshToken);
         }
         
-        this.currentUser = response.user;
+        this.currentUser = user;
         this._saveUserToStorage(this.currentUser);
         
         return {

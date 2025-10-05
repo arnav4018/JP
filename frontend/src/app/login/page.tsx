@@ -56,8 +56,17 @@ export default function LoginPage() {
       const result = await login(formData.email, formData.password);
       
       if (result.success && result.user) {
-        // Redirect based on user role
+        // Redirect based on user role and user type selection
         const user = result.user;
+        console.log('Login successful, user role:', user.role, 'selected type:', userType);
+        
+        // Verify that the user's role matches the selected user type
+        if (user.role !== userType) {
+          setSubmitError(`This account is registered as a ${user.role}. Please select the correct account type.`);
+          return;
+        }
+        
+        // Redirect based on user role
         if (user.role === 'admin') {
           router.push('/admin');
         } else if (user.role === 'recruiter') {
@@ -70,7 +79,23 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setSubmitError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('Network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (err.message.includes('401') || err.message.includes('unauthorized')) {
+          errorMessage = 'Invalid email or password. Please check your credentials.';
+        } else if (err.message.includes('404')) {
+          errorMessage = 'Authentication service not found. Please contact support.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setSubmitError(errorMessage);
     }
   };
 
