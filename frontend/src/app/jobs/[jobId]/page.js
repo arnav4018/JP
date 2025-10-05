@@ -62,19 +62,33 @@ export default function JobDetailsPage() {
         // First try to fetch job details
         try {
           const jobData = await API.jobs.getById(params.jobId);
+          // Ensure company field is properly set
+          if (!jobData.company) {
+            jobData.company = jobData.company_name || null;
+          }
           setJob(jobData);
         } catch (detailError) {
           console.log('Individual job API failed, trying fallback:', detailError);
           
           // Fallback: Get job from jobs list
           const allJobsResponse = await API.jobs.getAll({ limit: 100 });
-          const targetJob = allJobsResponse.data.jobs.find(job => job.id.toString() === params.jobId.toString());
+          // Handle different API response formats
+          let jobs = [];
+          if (allJobsResponse && allJobsResponse.success && allJobsResponse.data && allJobsResponse.data.jobs) {
+            jobs = allJobsResponse.data.jobs;
+          } else if (allJobsResponse && allJobsResponse.jobs) {
+            jobs = allJobsResponse.jobs;
+          } else if (Array.isArray(allJobsResponse)) {
+            jobs = allJobsResponse;
+          }
+          
+          const targetJob = jobs.find(job => job.id && job.id.toString() === params.jobId.toString());
           
           if (targetJob) {
             // Transform the job data to match expected format
             const transformedJob = {
               ...targetJob,
-              company: targetJob.company_name || targetJob.company,
+              company: targetJob.company_name || targetJob.company || null,
               postedDate: targetJob.created_at,
               type: targetJob.employment_type || 'Full-time',
               category: targetJob.experience_level || 'Not specified',
@@ -248,13 +262,19 @@ export default function JobDetailsPage() {
                       </h1>
                       <div className="flex items-center space-x-2 mb-4">
                         <Building className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
-                        <Link 
-                          href={`/companies/${job.company.toLowerCase().replace(/\\s+/g, '-')}`}
-                          className="text-lg font-medium transition-colors hover:opacity-80"
-                          style={{ color: 'var(--accent-interactive)' }}
-                        >
-                          {job.company}
-                        </Link>
+                        {job.company ? (
+                          <Link 
+                            href={`/companies/${job.company.toLowerCase().replace(/\\s+/g, '-')}`}
+                            className="text-lg font-medium transition-colors hover:opacity-80"
+                            style={{ color: 'var(--accent-interactive)' }}
+                          >
+                            {job.company}
+                          </Link>
+                        ) : (
+                          <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
+                            Company Name Not Available
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex space-x-3">
@@ -402,7 +422,7 @@ export default function JobDetailsPage() {
                 {/* Company Quick Info */}
                 <div className="rounded-lg shadow-sm p-6" style={{ backgroundColor: 'var(--background-panel)', borderColor: 'var(--accent-subtle)' }}>
                   <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                    About {job.company}
+                    About {job.company || 'this Company'}
                   </h3>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -415,16 +435,18 @@ export default function JobDetailsPage() {
                     </div>
                     <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <Globe className="h-4 w-4" />
-                      <span>www.{job.company.toLowerCase().replace(' ', '')}.com</span>
+                      <span>{job.company ? `www.${job.company.toLowerCase().replace(' ', '')}.com` : 'Website not available'}</span>
                     </div>
                   </div>
-                  <Link
-                    href={`/companies/${job.company.toLowerCase().replace(/\\s+/g, '-')}`}
-                    className="inline-flex items-center mt-4 text-sm font-medium transition-colors hover:opacity-80"
-                    style={{ color: 'var(--accent-interactive)' }}
-                  >
-                    View Company Profile
-                  </Link>
+                  {job.company && (
+                    <Link
+                      href={`/companies/${job.company.toLowerCase().replace(/\\s+/g, '-')}`}
+                      className="inline-flex items-center mt-4 text-sm font-medium transition-colors hover:opacity-80"
+                      style={{ color: 'var(--accent-interactive)' }}
+                    >
+                      View Company Profile
+                    </Link>
+                  )}
                 </div>
 
                 {/* Job Stats */}
@@ -435,7 +457,7 @@ export default function JobDetailsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span style={{ color: 'var(--text-secondary)' }}>Job ID:</span>
-                      <span style={{ color: 'var(--text-primary)' }}>#{job.id.toString().padStart(4, '0')}</span>
+                      <span style={{ color: 'var(--text-primary)' }}>#{job.id ? job.id.toString().padStart(4, '0') : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span style={{ color: 'var(--text-secondary)' }}>Applications:</span>

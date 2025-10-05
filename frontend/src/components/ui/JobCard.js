@@ -7,10 +7,10 @@ import { MapPin, Clock, Briefcase, DollarSign, Building } from 'lucide-react';
 function JobCard({ job }) {
   // Transform backend data to match frontend expectations
   const transformedJob = {
-    id: job.id,
+    id: job.id || job._id || Math.random().toString(36).substr(2, 9), // Fallback ID if none exists
     title: job.title,
     description: job.description,
-    company: job.company_name || job.company,
+    company: job.company_name || job.company || null,
     location: job.location,
     salary: job.salary_min && job.salary_max 
       ? `₹${Math.round(job.salary_min / 100000)}L - ₹${Math.round(job.salary_max / 100000)}L`
@@ -58,15 +58,21 @@ function JobCard({ job }) {
           </Link>
           <div className="flex items-center space-x-2 mb-2" style={{ color: 'var(--text-secondary)' }}>
             <Building className="h-4 w-4" />
-            <Link 
-              href={`/companies/${transformedJob.company.toLowerCase().replace(/\s+/g, '-')}`}
-              className="transition-colors font-medium"
-              style={{ color: 'var(--text-secondary)' }}
-              onMouseEnter={(e) => e.target.style.color = 'var(--accent-interactive)'}
-              onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
-            >
-              {transformedJob.company}
-            </Link>
+            {transformedJob.company ? (
+              <Link 
+                href={`/companies/${transformedJob.company.toLowerCase().replace(/\s+/g, '-')}`}
+                className="transition-colors font-medium"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => e.target.style.color = 'var(--accent-interactive)'}
+                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+              >
+                {transformedJob.company}
+              </Link>
+            ) : (
+              <span className="font-medium">
+                Company Name Not Available
+              </span>
+            )}
           </div>
         </div>
         
