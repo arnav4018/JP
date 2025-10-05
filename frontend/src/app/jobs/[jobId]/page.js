@@ -66,6 +66,11 @@ export default function JobDetailsPage() {
           if (!jobData.company) {
             jobData.company = jobData.company_name || null;
           }
+          // Ensure requirements and benefits are arrays
+          jobData.requirements = Array.isArray(jobData.requirements) ? jobData.requirements : 
+            (typeof jobData.requirements === 'string' ? jobData.requirements.split(',').map(s => s.trim()).filter(Boolean) : []);
+          jobData.benefits = Array.isArray(jobData.benefits) ? jobData.benefits : 
+            (typeof jobData.benefits === 'string' ? jobData.benefits.split(',').map(s => s.trim()).filter(Boolean) : []);
           setJob(jobData);
         } catch (detailError) {
           console.log('Individual job API failed, trying fallback:', detailError);
@@ -97,8 +102,10 @@ export default function JobDetailsPage() {
                 : targetJob.salary_min 
                   ? `₹${(targetJob.salary_min / 100000).toFixed(1)}L+`
                   : 'Not disclosed',
-              requirements: targetJob.requirements || [],
-              benefits: targetJob.benefits || []
+              requirements: Array.isArray(targetJob.requirements) ? targetJob.requirements : 
+                (typeof targetJob.requirements === 'string' ? targetJob.requirements.split(',').map(s => s.trim()).filter(Boolean) : []),
+              benefits: Array.isArray(targetJob.benefits) ? targetJob.benefits : 
+                (typeof targetJob.benefits === 'string' ? targetJob.benefits.split(',').map(s => s.trim()).filter(Boolean) : [])
             };
             setJob(transformedJob);
           } else {
@@ -342,7 +349,7 @@ export default function JobDetailsPage() {
                 </div>
 
                 {/* Requirements */}
-                {job.requirements && job.requirements.length > 0 && (
+                {Array.isArray(job.requirements) && job.requirements.length > 0 && (
                   <div className="mb-8">
                     <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
                       Requirements
@@ -359,7 +366,7 @@ export default function JobDetailsPage() {
                 )}
 
                 {/* Benefits */}
-                {job.benefits && job.benefits.length > 0 && (
+                {Array.isArray(job.benefits) && job.benefits.length > 0 && (
                   <div className="mb-8">
                     <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
                       Benefits & Perks

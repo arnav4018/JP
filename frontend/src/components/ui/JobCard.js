@@ -18,8 +18,10 @@ function JobCard({ job }) {
     category: job.experience_level || job.category,
     type: job.type || 'Full-time', // Default to Full-time if not specified
     postedDate: job.created_at || job.postedDate,
-    requirements: job.requirements || [],
-    benefits: job.benefits || []
+    requirements: Array.isArray(job.requirements) ? job.requirements : 
+      (typeof job.requirements === 'string' ? job.requirements.split(',').map(s => s.trim()).filter(Boolean) : []),
+    benefits: Array.isArray(job.benefits) ? job.benefits : 
+      (typeof job.benefits === 'string' ? job.benefits.split(',').map(s => s.trim()).filter(Boolean) : [])
   };
 
   const formatPostedDate = (dateString) => {
@@ -113,7 +115,7 @@ function JobCard({ job }) {
       </p>
 
       {/* Skills/Requirements */}
-      {transformedJob.requirements && transformedJob.requirements.length > 0 && (
+      {Array.isArray(transformedJob.requirements) && transformedJob.requirements.length > 0 && (
         <div className="mb-4">
           <div className="flex flex-wrap gap-2">
             {transformedJob.requirements.slice(0, 4).map((skill, index) => (
@@ -135,7 +137,7 @@ function JobCard({ job }) {
       )}
 
       {/* Benefits Preview */}
-      {transformedJob.benefits && transformedJob.benefits.length > 0 && (
+      {Array.isArray(transformedJob.benefits) && transformedJob.benefits.length > 0 && (
         <div className="mb-4">
           <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Benefits:</p>
           <div className="flex flex-wrap gap-1">
