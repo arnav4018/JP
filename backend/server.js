@@ -33,11 +33,23 @@ const server = http.createServer(app);
 // Async function to initialize server
 async function initializeServer() {
     try {
+        console.log('🚀 Starting server initialization...');
+        console.log('📊 Environment check:', {
+            NODE_ENV: process.env.NODE_ENV,
+            PORT: process.env.PORT,
+            DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+            JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'NOT SET'
+        });
+        
         // Connect to database
+        console.log('🔗 Connecting to database...');
         await connectDB();
+        console.log('✅ Database connected successfully');
         
         // Setup database tables if needed
+        console.log('📋 Setting up database tables...');
         await setupDatabase();
+        console.log('✅ Database setup completed');
         
         // Initialize Socket.IO service - temporarily disabled
         // const io = socketService.initialize(server);
@@ -88,12 +100,28 @@ async function initializeServer() {
         // app.use('/api/admin', adminRoutes);
         // app.use('/api/admin/export', exportRoutes);
 
+        // Root endpoint for testing
+        app.get('/', (req, res) => {
+            res.status(200).json({
+                message: 'Job Portal API Server',
+                status: 'running',
+                version: '1.0.0',
+                endpoints: {
+                    health: '/api/health',
+                    auth: '/api/auth',
+                    jobs: '/api/jobs',
+                    applications: '/api/applications'
+                }
+            });
+        });
+
         // Health check route
         app.get('/api/health', (req, res) => {
             res.status(200).json({
                 status: 'OK',
                 message: 'Job Portal API is running',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV || 'development'
             });
         });
 
