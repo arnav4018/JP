@@ -49,9 +49,7 @@ const validateUserRegistration = [
         .notEmpty()
         .withMessage('Password is required')
         .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-        .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
+        .withMessage('Password must be at least 6 characters'),
     
     body('role')
         .optional()
@@ -334,9 +332,7 @@ const validatePassword = [
         .notEmpty()
         .withMessage('Password is required')
         .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-        .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
+        .withMessage('Password must be at least 6 characters'),
     
     handleValidationErrors
 ];

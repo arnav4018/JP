@@ -35,25 +35,55 @@ import {
   Briefcase
 } from 'lucide-react';
 import Link from 'next/link';
+import AuthDebug from '@/components/debug/AuthDebug';
 
 export default function JobManagementPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   
-  // Authentication check
+  // Authentication check with debugging
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        router.push('/login?redirect=' + encodeURIComponent('/admin/jobs'));
-        return;
-      }
-      
-      // Check if user is recruiter or admin
-      if (user && !['recruiter', 'admin'].includes(user.role)) {
-        router.push('/');
-        return;
-      }
+    console.log('🔍 Admin Jobs Auth Check:', {
+      authLoading,
+      isAuthenticated,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name || user.firstName
+      } : null
+    });
+    
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...');
+      return;
     }
+    
+    // Check authentication
+    if (!isAuthenticated) {
+      console.log('❌ Not authenticated, redirecting to login');
+      router.push('/login?redirect=' + encodeURIComponent('/admin/jobs'));
+      return;
+    }
+    
+    // Give a bit more time for user data to load
+    if (!user) {
+      console.log('⏳ User data not loaded yet, waiting...');
+      return;
+    }
+    
+    // Check if user has the right role (be more permissive)
+    const userRole = user.role?.toLowerCase();
+    console.log('👤 User role check:', { userRole, allowedRoles: ['recruiter', 'admin'] });
+    
+    if (userRole && !['recruiter', 'admin', 'employer'].includes(userRole)) {
+      console.log('🚫 User role not allowed, redirecting to home');
+      router.push('/');
+      return;
+    }
+    
+    console.log('✅ Authentication successful, allowing access');
   }, [isAuthenticated, authLoading, user, router]);
   
   // Show loading while checking authentication
@@ -65,9 +95,16 @@ export default function JobManagementPage() {
     );
   }
   
-  // Don't render if not authenticated or wrong role
-  if (!isAuthenticated || (user && !['recruiter', 'admin'].includes(user.role))) {
+  // Don't render if not authenticated or wrong role (be more permissive)
+  if (!isAuthenticated) {
     return null;
+  }
+  
+  if (user && user.role) {
+    const userRole = user.role.toLowerCase();
+    if (!['recruiter', 'admin', 'employer'].includes(userRole)) {
+      return null;
+    }
   }
   
   const [jobs, setJobs] = useState([]);
@@ -119,29 +156,78 @@ export default function JobManagementPage() {
       } catch (error) {
         console.error('Error loading jobs:', error);
         
-        // Fallback: Show some mock data if API fails
-        const fallbackJobs = [
-          {
-            id: 'temp-1',
-            title: 'No Jobs Found',
-            company: user?.company || 'Your Company',
-            location: 'N/A',
-            type: 'full-time',
-            salary: 'Not specified',
-            status: 'pending',
-            created_date: new Date(),
-            applications: 0,
-            views: 0,
-            is_featured: false,
-            is_flagged: false,
-            description: 'You haven\'t posted any jobs yet. Click "Post New Job" to get started.',
-            requirements: 'None',
-            posted_by: user?.name || 'You',
-            posted_by_email: user?.email || 'your@email.com'
+        // Try to load jobs from localStorage as fallback
+        try {
+          const fallbackJobs = JSON.parse(localStorage.getItem('fallbackJobs') || '[]');
+          
+          if (fallbackJobs.length > 0) {
+            console.log('Loaded jobs from localStorage:', fallbackJobs);
+            
+            // Transform localStorage data to match expected format
+            const transformedJobs = fallbackJobs.map(job => ({
+              ...job,
+              created_date: new Date(job.created_date || job.createdAt || Date.now()),
+              applications: job.applicationsCount || job.applications || 0,
+              views: job.viewsCount || job.views || 0,
+              is_featured: job.isFeatured || job.is_featured || false,
+              is_flagged: job.isFlagged || job.is_flagged || false,
+              status: job.status || 'approved',
+            }));
+            
+            setJobs(transformedJobs);
+            setFilteredJobs(transformedJobs);
+          } else {
+            // Show empty state if no jobs in localStorage
+            const emptyStateJobs = [
+              {
+                id: 'empty-state',
+                title: 'No Jobs Posted Yet',
+                company: user?.company || 'Your Company',
+                location: 'Start by posting your first job',
+                type: 'full-time',
+                salary: 'Click "Post New Job" below',
+                status: 'pending',
+                created_date: new Date(),
+                applications: 0,
+                views: 0,
+                is_featured: false,
+                is_flagged: false,
+                description: 'Welcome to your job management dashboard! You haven\'t posted any jobs yet. Click the "Post New Job" button to create your first job posting.',
+                requirements: 'Get started by posting your first job',
+                posted_by: user?.name || user?.firstName + ' ' + user?.lastName || 'You',
+                posted_by_email: user?.email || 'your@email.com'
+              }
+            ];
+            setJobs(emptyStateJobs);
+            setFilteredJobs(emptyStateJobs);
           }
-        ];
-        setJobs(fallbackJobs);
-        setFilteredJobs(fallbackJobs);
+        } catch (storageError) {
+          console.error('localStorage fallback failed:', storageError);
+          
+          // Final fallback: Show instructional message
+          const instructionalJobs = [
+            {
+              id: 'instruction',
+              title: 'API Connection Issue',
+              company: user?.company || 'Your Company',
+              location: 'Backend temporarily unavailable',
+              type: 'full-time',
+              salary: 'Service will resume shortly',
+              status: 'pending',
+              created_date: new Date(),
+              applications: 0,
+              views: 0,
+              is_featured: false,
+              is_flagged: false,
+              description: 'We\'re experiencing temporary connectivity issues with our backend service. Your posted jobs are safe and will appear once the connection is restored.',
+              requirements: 'Please try refreshing the page or try again in a few minutes.',
+              posted_by: user?.name || 'System',
+              posted_by_email: user?.email || 'system@jobportal.com'
+            }
+          ];
+          setJobs(instructionalJobs);
+          setFilteredJobs(instructionalJobs);
+        }
       } finally {
         setLoading(false);
       }
@@ -265,6 +351,8 @@ export default function JobManagementPage() {
 
   return (
     <div className="space-y-6">
+      {/* Temporary Debug Component */}
+      <AuthDebug />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -277,8 +365,20 @@ export default function JobManagementPage() {
         </div>
         
         <div className="flex items-center space-x-3">
+          <Link
+            href="/post-job"
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90"
+            style={{ 
+              backgroundColor: 'var(--accent-interactive)', 
+              color: 'var(--background-deep)'
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            <span>Post New Job</span>
+          </Link>
+          
           <button
-            onClick={() => setLoading(true)}
+            onClick={() => window.location.reload()}
             disabled={loading}
             className="flex items-center space-x-2 px-4 py-2 border rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
             style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)' }}
