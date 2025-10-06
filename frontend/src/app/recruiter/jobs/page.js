@@ -72,18 +72,34 @@ export default function RecruiterJobsPage() {
     setError(null);
     
     try {
-      // Try to fetch jobs from API first
-      const response = await API.jobs.getMyJobs();
-      setJobs(response.data?.jobs || []);
-    } catch (apiError) {
-      console.log('API failed, trying fallback data...');
+      console.log('🔄 Loading jobs for user:', user?.email);
       
-      // Fallback to localStorage data (for demo purposes)
+      // Try to fetch jobs from API first
       try {
-        const fallbackJobs = JSON.parse(localStorage.getItem('fallbackJobs') || '[]');
+        const response = await API.jobs.getMyJobs();
+        console.log('✅ API response:', response);
         
-        console.log('Fallback jobs from localStorage:', fallbackJobs);
-        console.log('Current user:', user);
+        const apiJobs = response.data?.jobs || response.jobs || [];
+        console.log(`💼 Found ${apiJobs.length} jobs from API`);
+        
+        setJobs(apiJobs);
+        
+        if (apiJobs.length === 0) {
+          setError('No jobs found. Start by posting your first job!');
+        }
+        return; // Successfully got jobs from API
+        
+      } catch (apiError) {
+        console.warn('⚠️ API failed, trying fallback data:', apiError);
+        
+        // Fallback to localStorage data
+        const fallbackJobs = JSON.parse(localStorage.getItem('fallbackJobs') || '[]');
+        console.log(`💾 Found ${fallbackJobs.length} jobs in localStorage`);
+        
+        if (fallbackJobs.length === 0) {
+          setError('No jobs found. Start by posting your first job!');
+          return;
+        }
         
         // Filter jobs for current user with improved matching
         const userJobs = fallbackJobs.filter(job => {
@@ -98,20 +114,21 @@ export default function RecruiterJobsPage() {
             // Also check if job was posted by the same user (for cases where user data format might be different)
             (userEmail && job.posted_by_email && job.posted_by_email.toLowerCase() === userEmail.toLowerCase());
             
-          console.log(`Job: ${job.title}, Posted by: ${job.posted_by_email}, Matches: ${matches}`);
+          console.log(`Job: ${job.title}, Posted by: ${job.posted_by_email}, User: ${userEmail}, Matches: ${matches}`);
           return matches;
         });
         
-        console.log('Filtered user jobs:', userJobs);
+        console.log(`🎯 Filtered to ${userJobs.length} user jobs`);
         setJobs(userJobs);
         
         if (userJobs.length === 0) {
           setError('No jobs found. Start by posting your first job!');
         }
-      } catch (fallbackError) {
-        console.error('Fallback failed:', fallbackError);
-        setError('Failed to load jobs. Please try again.');
       }
+      
+    } catch (error) {
+      console.error('❌ Error loading jobs:', error);
+      setError('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
     }
