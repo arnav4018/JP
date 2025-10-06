@@ -26,6 +26,7 @@ export default function JobDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,14 +39,23 @@ export default function JobDetailsPage() {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        console.log('🔑 Initializing auth on job details page...');
         await authService.waitForInitialization();
-        setIsAuthenticated(authService.isAuthenticated());
-        setUser(authService.getCurrentUser());
+        
+        const authenticated = authService.isAuthenticated();
+        const currentUser = authService.getCurrentUser();
+        
+        console.log('🔑 Auth state:', { authenticated, user: currentUser });
+        
+        setIsAuthenticated(authenticated);
+        setUser(currentUser);
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error('❌ Auth initialization error:', error);
         // Continue without authentication - user can still view job details
         setIsAuthenticated(false);
         setUser(null);
+      } finally {
+        setAuthLoading(false);
       }
     };
     initAuth();
@@ -157,10 +167,25 @@ export default function JobDetailsPage() {
   };
 
   const handleApplyClick = () => {
+    console.log('🎯 Apply button clicked');
+    console.log('🔑 Auth state check:', { 
+      isAuthenticated, 
+      authLoading, 
+      user: user ? { email: user.email, role: user.role } : null 
+    });
+    
+    if (authLoading) {
+      console.log('⏳ Auth still loading, please wait...');
+      return; // Don't redirect if auth is still loading
+    }
+    
     if (!isAuthenticated) {
+      console.log('⚠️ User not authenticated, redirecting to login');
       router.push('/login?redirect=' + encodeURIComponent(`/jobs/${params.jobId}`));
       return;
     }
+    
+    console.log('✅ User authenticated, opening application modal');
     setShowApplicationModal(true);
   };
 
@@ -412,14 +437,20 @@ export default function JobDetailsPage() {
                     <div>
                       <button
                         onClick={handleApplyClick}
-                        className="w-full mb-4 px-6 py-3 rounded-lg text-lg font-semibold transition-opacity hover:opacity-90"
+                        disabled={authLoading}
+                        className="w-full mb-4 px-6 py-3 rounded-lg text-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: 'var(--accent-interactive)', color: 'var(--background-deep)' }}
                       >
-                        Apply Now
+                        {authLoading ? 'Loading...' : 'Apply Now'}
                       </button>
-                      {!isAuthenticated && (
+                      {!authLoading && !isAuthenticated && (
                         <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
                           You'll be asked to sign in before applying
+                        </p>
+                      )}
+                      {!authLoading && isAuthenticated && user && (
+                        <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+                          Ready to apply as {user.firstName || user.name || user.email}
                         </p>
                       )}
                     </div>
