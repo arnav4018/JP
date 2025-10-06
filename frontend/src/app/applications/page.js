@@ -102,8 +102,15 @@ export default function ApplicationsPage() {
   }, [isAuthenticated, user]);
 
   const loadApplications = async () => {
+    console.log('🔄 Starting to load applications...');
     const userId = authService.getUserId();
-    if (!userId) return;
+    console.log('👤 User ID:', userId);
+    
+    if (!userId) {
+      console.log('❌ No user ID found, skipping applications load');
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -113,7 +120,10 @@ export default function ApplicationsPage() {
       
       // Try to load from API first
       try {
+        console.log('📡 Calling API.applications.getMy()...');
         const response = await API.applications.getMy();
+        console.log('📡 API response:', response);
+        
         userApplications = response.data?.applications || response.applications || [];
         console.log('✅ Loaded applications from API:', userApplications.length);
       } catch (apiError) {
@@ -146,12 +156,16 @@ export default function ApplicationsPage() {
       // Combine both sources
       const allApplications = [...userApplications, ...transformedFallbackApps];
       console.log('🔄 Total applications loaded:', allApplications.length);
+      console.log('📋 Applications data:', allApplications);
       
       setApplications(allApplications);
+      console.log('✅ Applications state updated successfully');
+      
     } catch (err) {
+      console.error('❌ Error loading applications:', err);
       setError('Failed to load applications');
-      console.error('Error loading applications:', err);
     } finally {
+      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
