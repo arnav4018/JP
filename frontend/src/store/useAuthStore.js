@@ -154,20 +154,26 @@ export const useAuthStore = create(
 
         set({ loading: true, error: null });
         try {
-          const response = await mockAuth.updateProfile(user.id, profileData);
-          if (response.success) {
+          const response = await API.auth.updateProfile(profileData);
+          if (response.success || response.data) {
+            const updatedUser = response.data?.user || response.user || { ...user, ...profileData };
             set({ 
-              user: response.user,
+              user: updatedUser,
               loading: false,
               error: null
             });
-            return { success: true };
+            // Update localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+            return { success: true, user: updatedUser };
           } else {
-            set({ loading: false, error: response.error });
-            return { success: false, error: response.error };
+            const errorMessage = response.message || response.error || 'Failed to update profile';
+            set({ loading: false, error: errorMessage });
+            return { success: false, error: errorMessage };
           }
         } catch (error) {
-          const errorMessage = 'Failed to update profile. Please try again.';
+          const errorMessage = error.message || 'Failed to update profile. Please try again.';
           set({ loading: false, error: errorMessage });
           return { success: false, error: errorMessage };
         }

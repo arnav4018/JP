@@ -253,5 +253,5 @@ class Application extends BaseModel {
     }
 }
 
-// Export a singleton instance
-module.exports = new Application();
+// Export the class, not a singleton instance
+module.exports = Application;

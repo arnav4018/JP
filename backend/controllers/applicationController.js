@@ -1,6 +1,6 @@
-const Application = require('../models/Application');
-const Job = require('../models/Job');
-const User = require('../models/User');
+const ApplicationModel = require('../models/Application');
+const JobModel = require('../models/Job');
+const UserModel = require('../models/User');
 
 // @desc    Apply to a job
 // @route   POST /api/jobs/:jobId/apply
@@ -18,7 +18,7 @@ const applyToJob = async (req, res, next) => {
         } = req.body;
 
         // Get job details using the improved method
-        const jobModel = new Job();
+        const jobModel = new JobModel();
         const job = await jobModel.getJobById(jobId);
         
         if (!job) {
@@ -45,7 +45,7 @@ const applyToJob = async (req, res, next) => {
         }
 
         // Check if user already applied
-        const applicationModel = new Application();
+        const applicationModel = new ApplicationModel();
         const hasApplied = await applicationModel.hasAlreadyApplied(jobId, req.user.id);
 
         if (hasApplied) {
@@ -113,7 +113,7 @@ const getMyApplications = async (req, res, next) => {
             limit = 10
         } = req.query;
 
-        const applicationModel = new Application();
+        const applicationModel = new ApplicationModel();
         const options = {
             limit: parseInt(limit),
             offset: (parseInt(page) - 1) * parseInt(limit),
@@ -157,7 +157,7 @@ const getJobApplications = async (req, res, next) => {
             limit = 10
         } = req.query;
 
-        const jobModel = new Job();
+        const jobModel = new JobModel();
         const job = await jobModel.getJobById(jobId);
         
         if (!job) {
@@ -175,7 +175,7 @@ const getJobApplications = async (req, res, next) => {
             });
         }
 
-        const applicationModel = new Application();
+        const applicationModel = new ApplicationModel();
         const options = {
             limit: parseInt(limit),
             offset: (parseInt(page) - 1) * parseInt(limit),
@@ -216,7 +216,7 @@ const updateApplicationStatus = async (req, res, next) => {
         const { applicationId } = req.params;
         const { status, reason } = req.body;
 
-        const applicationModel = new Application();
+        const applicationModel = new ApplicationModel();
         const application = await applicationModel.getApplicationWithDetails(applicationId);
 
         if (!application) {
@@ -227,7 +227,7 @@ const updateApplicationStatus = async (req, res, next) => {
         }
 
         // Basic authorization check
-        const jobModel = new Job();
+        const jobModel = new JobModel();
         const job = await jobModel.getJobById(application.job_id);
         
         if (job.posted_by_recruiter_id && job.posted_by_recruiter_id.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
@@ -273,7 +273,7 @@ const toggleStarApplication = (req, res) => {
 const getApplicationStats = async (req, res, next) => {
     try {
         const { jobId } = req.query;
-        const applicationModel = new Application();
+        const applicationModel = new ApplicationModel();
         const stats = await applicationModel.getApplicationStats(jobId);
         
         res.status(200).json({
@@ -290,7 +290,7 @@ const withdrawApplication = async (req, res, next) => {
         const { applicationId } = req.params;
         const { reason } = req.body;
 
-        const applicationModel = new Application();
+        const applicationModel = new ApplicationModel();
         const application = await applicationModel.getApplicationWithDetails(applicationId);
 
         if (!application) {

@@ -74,10 +74,14 @@ export default function ProfilePage() {
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
                 </div>
                 <div className="mt-4 sm:mt-0 flex space-x-3">
-                  <button className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity" style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}>
+                  <Link
+                    href="/profile/edit"
+                    className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium hover:opacity-80 transition-opacity"
+                    style={{ borderColor: 'var(--accent-subtle)', color: 'var(--text-secondary)', backgroundColor: 'var(--background-panel)' }}
+                  >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit Profile
-                  </button>
+                  </Link>
                   
                   {/* Role-specific buttons */}
                   {user.role === 'candidate' ? (

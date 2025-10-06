@@ -12,15 +12,15 @@ const { setupDatabase } = require('./setup-database');
 const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobs');
 const applicationRoutes = require('./routes/applications');
-// const resumeRoutes = require('./routes/resumes');
-// const paymentRoutes = require('./routes/paymentRoutes');
-// const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
-// const referralRoutes = require('./routes/referralRoutes');
-// const aiScoringRoutes = require('./routes/aiScoringRoutes');
-// const messageRoutes = require('./routes/messageRoutes');
-// const notificationRoutes = require('./routes/notificationRoutes');
-// const adminRoutes = require('./routes/adminRoutes');
-// const exportRoutes = require('./routes/exportRoutes');
+const resumeRoutes = require('./routes/resumes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
+const referralRoutes = require('./routes/referralRoutes');
+const aiScoringRoutes = require('./routes/aiScoringRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 // Temporarily commented out MongoDB-dependent services
 // const socketService = require('./services/socketService');
 // const notificationService = require('./services/notificationService');
@@ -90,15 +90,15 @@ async function initializeServer() {
         app.use('/api/auth', authRoutes);
         app.use('/api/jobs', jobRoutes);
         app.use('/api/applications', applicationRoutes);
-        // app.use('/api/resumes', resumeRoutes);
-        // app.use('/api/payments', paymentRoutes);
-        // app.use('/api/settings', systemSettingsRoutes);
-        // app.use('/api/referrals', referralRoutes);
-        // app.use('/api/ai-scoring', aiScoringRoutes);
-        // app.use('/api/messages', messageRoutes);
-        // app.use('/api/notifications', notificationRoutes);
-        // app.use('/api/admin', adminRoutes);
-        // app.use('/api/admin/export', exportRoutes);
+        app.use('/api/resumes', resumeRoutes);
+        app.use('/api/payments', paymentRoutes);
+        app.use('/api/settings', systemSettingsRoutes);
+        app.use('/api/referrals', referralRoutes);
+        app.use('/api/ai-scoring', aiScoringRoutes);
+        app.use('/api/messages', messageRoutes);
+        app.use('/api/notifications', notificationRoutes);
+        app.use('/api/admin', adminRoutes);
+        app.use('/api/admin/export', exportRoutes);
 
         // Root endpoint for testing
         app.get('/', (req, res) => {
@@ -110,7 +110,15 @@ async function initializeServer() {
                     health: '/api/health',
                     auth: '/api/auth',
                     jobs: '/api/jobs',
-                    applications: '/api/applications'
+                    applications: '/api/applications',
+                    resumes: '/api/resumes',
+                    payments: '/api/payments',
+                    settings: '/api/settings',
+                    referrals: '/api/referrals',
+                    aiScoring: '/api/ai-scoring',
+                    messages: '/api/messages',
+                    notifications: '/api/notifications',
+                    admin: '/api/admin'
                 }
             });
         });
