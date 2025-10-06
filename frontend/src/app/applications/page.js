@@ -109,8 +109,45 @@ export default function ApplicationsPage() {
     setError(null);
 
     try {
-      const userApplications = await API.applications.getMy();
-      setApplications(userApplications);
+      let userApplications = [];
+      
+      // Try to load from API first
+      try {
+        const response = await API.applications.getMy();
+        userApplications = response.data?.applications || response.applications || [];
+        console.log('✅ Loaded applications from API:', userApplications.length);
+      } catch (apiError) {
+        console.warn('⚠️ Failed to load applications from API:', apiError);
+      }
+      
+      // Load localStorage fallback applications
+      const fallbackApplications = JSON.parse(localStorage.getItem('fallbackApplications') || '[]');
+      console.log('💾 Found localStorage applications:', fallbackApplications.length);
+      
+      // Transform localStorage applications to match expected format
+      const transformedFallbackApps = fallbackApplications.map(app => ({
+        id: app.id,
+        jobId: app.jobId,
+        status: app.status?.toLowerCase() || 'applied',
+        appliedAt: app.submittedAt,
+        lastUpdated: app.submittedAt,
+        job: {
+          title: app.jobTitle,
+          company: app.company,
+          location: 'Remote' // Default location for fallback apps
+        },
+        statusHistory: [{
+          status: app.status?.toLowerCase() || 'applied',
+          timestamp: app.submittedAt,
+          note: app.source === 'localStorage_fallback' ? 'Application saved locally (API offline)' : ''
+        }]
+      }));
+      
+      // Combine both sources
+      const allApplications = [...userApplications, ...transformedFallbackApps];
+      console.log('🔄 Total applications loaded:', allApplications.length);
+      
+      setApplications(allApplications);
     } catch (err) {
       setError('Failed to load applications');
       console.error('Error loading applications:', err);
@@ -146,11 +183,15 @@ export default function ApplicationsPage() {
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(app => 
-        app.job.title.toLowerCase().includes(query) ||
-        app.job.company.toLowerCase().includes(query) ||
-        app.job.location.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(app => {
+        const title = app.job?.title || app.jobTitle || '';
+        const company = app.job?.company || app.company || '';
+        const location = app.job?.location || app.location || '';
+        
+        return title.toLowerCase().includes(query) ||
+               company.toLowerCase().includes(query) ||
+               location.toLowerCase().includes(query);
+      });
     }
 
     return filtered.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
@@ -201,6 +242,12 @@ export default function ApplicationsPage() {
   const ApplicationCard = ({ application }) => {
     const statusInfo = ApplicationStatus[application.status] || ApplicationStatus.applied;
     const StatusIcon = statusInfo.icon;
+    
+    // Handle different data structures
+    const jobTitle = application.job?.title || application.jobTitle || 'Unknown Job';
+    const company = application.job?.company || application.company || 'Unknown Company';
+    const location = application.job?.location || application.location || 'Location not specified';
+    const jobId = application.jobId || application.job_id || application.id;
 
     return (
       <div className="rounded-lg border shadow-sm p-6 transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--background-panel)', borderColor: 'var(--accent-subtle)' }}>
@@ -208,21 +255,21 @@ export default function ApplicationsPage() {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <Link 
-              href={`/jobs/${application.jobId}`}
+              href={`/jobs/${jobId}`}
               className="block group"
             >
               <h3 className="text-lg font-semibold transition-colors group-hover:opacity-80" style={{ color: 'var(--text-primary)' }}>
-                {application.job.title}
+                {jobTitle}
               </h3>
             </Link>
             <div className="flex items-center space-x-2 mt-1">
               <Building className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
               <Link
-                href={`/companies/${application.job.company.toLowerCase().replace(/\\s+/g, '-')}`}
+                href={`/companies/${company.toLowerCase().replace(/\\s+/g, '-')}`}
                 className="text-sm font-medium transition-colors hover:opacity-80"
                 style={{ color: 'var(--accent-interactive)' }}
               >
-                {application.job.company}
+                {company}
               </Link>
             </div>
           </div>
@@ -237,7 +284,7 @@ export default function ApplicationsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <div className="flex items-center space-x-2">
             <MapPin className="h-4 w-4" />
-            <span>{application.job.location}</span>
+            <span>{location}</span>
           </div>
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4" />
@@ -257,7 +304,7 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Timeline (collapsible) */}
-        {application.statusHistory.length > 1 && (
+        {application.statusHistory && application.statusHistory.length > 1 && (
           <details className="group">
             <summary className="cursor-pointer text-sm font-medium transition-colors hover:opacity-80" style={{ color: 'var(--accent-interactive)' }}>
               View Application Timeline
@@ -270,7 +317,7 @@ export default function ApplicationsPage() {
         {/* Actions */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ borderColor: 'var(--accent-subtle)' }}>
           <Link
-            href={`/jobs/${application.jobId}`}
+            href={`/jobs/${jobId}`}
             className="text-sm font-medium transition-colors hover:opacity-80"
             style={{ color: 'var(--accent-interactive)' }}
           >
