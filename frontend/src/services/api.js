@@ -194,7 +194,7 @@ const API = {
      * @returns {Promise} User applications
      */
     getMy: () => {
-      return httpClient.get('/jobs/user/my-applications');
+      return httpClient.get('/applications/my-applications');
     },
 
     /**
