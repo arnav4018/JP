@@ -190,7 +190,7 @@ export default function ProfileEditPage() {
                   onClick={handleSave}
                   disabled={loading}
                   className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium text-white hover:opacity-80 transition-opacity disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--accent-interactive)', borderColor: 'var(--accent-interactive)' }}
+                  style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? 'Saving...' : 'Save Changes'}
@@ -432,7 +432,7 @@ export default function ProfileEditPage() {
                     <button
                       onClick={addSkill}
                       className="px-4 py-2 text-white rounded-md hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: 'var(--accent-interactive)' }}
+                      style={{ backgroundColor: '#3B82F6' }}
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -501,7 +501,7 @@ export default function ProfileEditPage() {
                     <button
                       onClick={addExperience}
                       className="inline-flex items-center px-3 py-2 text-sm text-white rounded-md hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: 'var(--accent-interactive)' }}
+                      style={{ backgroundColor: '#3B82F6' }}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Experience

@@ -57,7 +57,15 @@ async function setupDatabase(closePool = false) {
                 { name: 'is_profile_complete', type: 'BOOLEAN DEFAULT FALSE' },
                 { name: 'is_email_verified', type: 'BOOLEAN DEFAULT FALSE' },
                 { name: 'last_login', type: 'TIMESTAMP' },
-                { name: 'company_name', type: 'VARCHAR(255)' }
+                { name: 'company_name', type: 'VARCHAR(255)' },
+                { name: 'company_website', type: 'VARCHAR(500)' },
+                { name: 'company_size', type: 'VARCHAR(100)' },
+                { name: 'location', type: 'VARCHAR(255)' },
+                { name: 'bio', type: 'TEXT' },
+                { name: 'title', type: 'VARCHAR(255)' },
+                { name: 'website', type: 'VARCHAR(500)' },
+                { name: 'skills', type: 'TEXT' },
+                { name: 'experience', type: 'TEXT' }
             ];
             
             for (const col of requiredColumns) {

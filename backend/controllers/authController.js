@@ -164,11 +164,69 @@ const getMe = async (req, res, next) => {
 // @desc    Update user profile  
 // @route   PUT /api/auth/profile
 // @access  Private
-const updateProfile = async (req, res) => {
-    res.status(200).json({ 
-        success: true, 
-        message: "Profile update not implemented yet" 
-    });
+const updateProfile = async (req, res, next) => {
+    try {
+        const userModel = new User();
+        const userId = req.user.id;
+        
+        const {
+            firstName,
+            lastName,
+            phone,
+            location,
+            bio,
+            title,
+            website,
+            skills,
+            companyName,
+            companyWebsite,
+            companySize
+        } = req.body;
+
+        // Update user profile
+        const updatedUser = await userModel.updateProfile(userId, {
+            firstName,
+            lastName,
+            phone,
+            location,
+            bio,
+            title,
+            website,
+            skills: JSON.stringify(skills || []),
+            ...(req.user.role === 'recruiter' && {
+                companyName,
+                companyWebsite,
+                companySize
+            })
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: {
+                user: {
+                    id: updatedUser.id,
+                    firstName: updatedUser.first_name,
+                    lastName: updatedUser.last_name,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    phone: updatedUser.phone,
+                    location: updatedUser.location,
+                    bio: updatedUser.bio,
+                    title: updatedUser.title,
+                    website: updatedUser.website,
+                    skills: updatedUser.skills ? JSON.parse(updatedUser.skills) : [],
+                    companyName: updatedUser.company_name,
+                    companyWebsite: updatedUser.company_website,
+                    companySize: updatedUser.company_size
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Profile update error:', error);
+        next(error);
+    }
 };
 
 // @desc    Change password

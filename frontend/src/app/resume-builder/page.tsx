@@ -223,7 +223,7 @@ export default function ResumeBuilderPage() {
               <button
                 onClick={() => setShowNewResumeModal(true)}
                 className="inline-flex items-center px-6 py-3 text-white rounded-lg shadow-md hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: 'var(--accent-interactive)' }}
+                style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Create New Resume
@@ -259,7 +259,7 @@ export default function ResumeBuilderPage() {
                 <button
                   onClick={() => setShowNewResumeModal(true)}
                   className="inline-flex items-center px-6 py-3 text-white rounded-lg shadow-md hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: 'var(--accent-interactive)' }}
+                  style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
                 >
                   <Plus className="h-5 w-5 mr-2" />
                   Create Your First Resume
@@ -424,7 +424,7 @@ export default function ResumeBuilderPage() {
                   onClick={createNewResume}
                   disabled={loading || !newResumeTitle.trim()}
                   className="px-4 py-2 text-white rounded-md hover:opacity-80 transition-opacity disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--accent-interactive)' }}
+                  style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
                 >
                   {loading ? 'Creating...' : 'Create Resume'}
                 </button>
