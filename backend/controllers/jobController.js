@@ -237,11 +237,49 @@ const getCompanies = async (req, res, next) => {
     }
 };
 
+// @desc    Get recruiter's jobs
+// @route   GET /api/jobs/user/my-jobs
+// @access  Private (Recruiter/Admin only)
+const getMyJobs = async (req, res, next) => {
+    try {
+        console.log('💼 Getting jobs for user:', req.user?.id);
+        
+        const jobModel = new Job();
+        const jobs = await jobModel.getJobsByRecruiter(req.user.id);
+        
+        // Transform jobs to include additional fields
+        const transformedJobs = jobs.map(job => ({
+            ...job,
+            applications: 0, // TODO: Get actual application count
+            views: job.views || 0,
+            company: job.company_name || 'Company Name',
+            status: job.status || 'active',
+            created_date: job.created_at || job.posted_at,
+            createdAt: job.created_at || job.posted_at
+        }));
+        
+        console.log(`✅ Found ${transformedJobs.length} jobs for recruiter`);
+        
+        res.status(200).json({
+            success: true,
+            count: transformedJobs.length,
+            data: {
+                jobs: transformedJobs
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error getting recruiter jobs:', error);
+        next(error);
+    }
+};
+
 module.exports = {
     getJobs,
     getJob,
     createJob,
     updateJob,
     deleteJob,
-    getCompanies
+    getCompanies,
+    getMyJobs
 };

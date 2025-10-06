@@ -5,7 +5,8 @@ const {
     createJob,
     updateJob,
     deleteJob,
-    getCompanies
+    getCompanies,
+    getMyJobs
 } = require('../controllers/jobController');
 
 const {
@@ -23,16 +24,7 @@ router.get('/:id', getJob);
 
 // Routes for candidates and recruiters
 // router.get('/user/my-applications', protect, authorize('candidate'), getMyApplications);
-router.get('/user/my-jobs', protect, authorize('recruiter', 'admin'), (req, res) => {
-    // Temporary implementation for my jobs
-    res.status(200).json({
-        success: true,
-        count: 0,
-        data: {
-            jobs: []
-        }
-    });
-});
+router.get('/user/my-jobs', protect, authorize('recruiter', 'admin'), getMyJobs);
 
 // Job management routes - with authentication
 router.post('/', protect, authorize('recruiter', 'admin'), createJob);
