@@ -2,8 +2,8 @@
 # Exit on error
 set -o errexit
 
-echo "🚀 Starting Render build process for Job Portal Backend..."
-echo "========================================================"
+echo "🚀 Starting Minimal Render Build Process..."
+echo "==========================================="
 
 # Install dependencies
 echo "📦 Installing dependencies..."
@@ -34,13 +34,9 @@ else
     exit 1
 fi
 
-# Test database connection (with timeout)
-echo "🔍 Testing database connection..."
-timeout 20s node verify-render-database-simple.js || echo "⚠️ Database test failed or timed out, but continuing deployment..."
-
 # Set production permissions
 echo "🔐 Setting production permissions..."
 find . -type f -name "*.js" -exec chmod 644 {} \;
 
-echo "✅ Build completed successfully!"
-echo "🎉 Job Portal Backend is ready for deployment"
+echo "✅ Minimal build completed successfully!"
+echo "🎉 Ready for deployment without database verification"
