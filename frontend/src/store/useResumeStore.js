@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import resumeService from '@/services/resumeService';
 
 // Default resume structure
 const defaultResumeData = {
@@ -157,6 +158,23 @@ export const useResumeStore = create(
         set({ currentResume: { ...defaultResumeData } });
       },
       
+      // Load all user resumes from backend
+      loadUserResumes: async (params = {}) => {
+        try {
+          const result = await resumeService.getUserResumes(params);
+          if (result.success) {
+            set({ savedResumes: result.resumes });
+            return result.resumes;
+          } else {
+            console.error('Failed to load user resumes:', result.error);
+            return [];
+          }
+        } catch (error) {
+          console.error('Failed to load user resumes:', error);
+          return [];
+        }
+      },
+      
       // UI state
       selectedTemplate: 'classic',
       previewMode: false,
@@ -175,52 +193,103 @@ export const useResumeStore = create(
         return newResume;
       },
       
-      // Load existing resume
-      loadResume: (resumeId) => {
-        const { savedResumes } = get();
-        const resume = savedResumes.find(r => r.id === resumeId);
-        if (resume) {
-          set({ currentResume: resume, selectedTemplate: resume.template });
-        }
-        return resume;
-      },
-      
-      // Save current resume
-      saveResume: () => {
-        const { currentResume, savedResumes } = get();
-        const updatedResume = {
-          ...currentResume,
-          lastModified: new Date().toISOString()
-        };
-        
-        const existingIndex = savedResumes.findIndex(r => r.id === currentResume.id);
-        let updatedSavedResumes;
-        
-        if (existingIndex >= 0) {
-          // Update existing resume
-          updatedSavedResumes = [...savedResumes];
-          updatedSavedResumes[existingIndex] = updatedResume;
-        } else {
-          // Add new resume
-          if (!updatedResume.id) {
-            updatedResume.id = Date.now().toString();
+      // Load existing resume from backend
+      loadResume: async (resumeId) => {
+        try {
+          const result = await resumeService.getResume(resumeId);
+          if (result.success && result.resume) {
+            const resume = resumeService.transformResumeData(result.resume);
+            set({ 
+              currentResume: resume, 
+              selectedTemplate: resume.template || 'classic' 
+            });
+            return resume;
+          } else {
+            console.error('Failed to load resume:', result.error);
+            // Fallback to local storage
+            const { savedResumes } = get();
+            const resume = savedResumes.find(r => r.id === resumeId);
+            if (resume) {
+              set({ currentResume: resume, selectedTemplate: resume.template });
+            }
+            return resume;
           }
-          updatedSavedResumes = [...savedResumes, updatedResume];
+        } catch (error) {
+          console.error('Failed to load resume:', error);
+          return null;
         }
-        
-        set({ 
-          currentResume: updatedResume,
-          savedResumes: updatedSavedResumes 
-        });
-        
-        return updatedResume;
       },
       
-      // Delete resume
-      deleteResume: (resumeId) => {
-        const { savedResumes } = get();
-        const updatedSavedResumes = savedResumes.filter(r => r.id !== resumeId);
-        set({ savedResumes: updatedSavedResumes });
+      // Save current resume to backend
+      saveResume: async () => {
+        const { currentResume, savedResumes } = get();
+        
+        try {
+          let result;
+          
+          if (currentResume.id && currentResume.id !== 'new' && currentResume.id !== null) {
+            // Update existing resume
+            result = await resumeService.updateResume(currentResume.id, currentResume);
+          } else {
+            // Create new resume
+            result = await resumeService.createResume(currentResume);
+          }
+          
+          if (result.success) {
+            const savedResume = resumeService.transformResumeData(result.resume);
+            
+            // Update local state
+            const existingIndex = savedResumes.findIndex(r => r.id === savedResume.id);
+            let updatedSavedResumes;
+            
+            if (existingIndex >= 0) {
+              updatedSavedResumes = [...savedResumes];
+              updatedSavedResumes[existingIndex] = savedResume;
+            } else {
+              updatedSavedResumes = [...savedResumes, savedResume];
+            }
+            
+            set({ 
+              currentResume: savedResume,
+              savedResumes: updatedSavedResumes 
+            });
+            
+            return savedResume;
+          } else {
+            throw new Error(result.error);
+          }
+        } catch (error) {
+          console.error('Failed to save resume:', error);
+          throw error;
+        }
+      },
+      
+      // Delete resume from backend
+      deleteResume: async (resumeId) => {
+        try {
+          const result = await resumeService.deleteResume(resumeId);
+          
+          if (result.success) {
+            // Update local state
+            const { savedResumes, currentResume } = get();
+            const updatedSavedResumes = savedResumes.filter(r => r.id !== resumeId);
+            
+            // If we deleted the currently loaded resume, clear it
+            const newCurrentResume = currentResume?.id === resumeId ? null : currentResume;
+            
+            set({ 
+              savedResumes: updatedSavedResumes,
+              currentResume: newCurrentResume
+            });
+            
+            return true;
+          } else {
+            throw new Error(result.error);
+          }
+        } catch (error) {
+          console.error('Failed to delete resume:', error);
+          throw error;
+        }
       },
       
       // Update resume field

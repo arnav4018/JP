@@ -234,30 +234,41 @@ const API = {
   // =============================================================================
   resumes: {
     /**
-     * Upload resume file
-     * @param {FormData} formData - Resume file data
-     * @param {Function} onUploadProgress - Upload progress callback
-     * @returns {Promise} Upload response
+     * Get user's resumes with pagination
+     * @param {Object} params - Query parameters (page, limit, orderBy)
+     * @returns {Promise} User resumes with pagination
      */
-    upload: (formData, onUploadProgress = null) => {
-      return httpClient.upload('/resumes/upload', formData, onUploadProgress);
+    getAll: (params = {}) => {
+      const queryString = new URLSearchParams(params).toString();
+      return httpClient.get(`/resumes?${queryString}`);
     },
 
     /**
-     * Get user's resumes
-     * @returns {Promise} User resumes
+     * Get resume by ID
+     * @param {string} resumeId - Resume ID
+     * @returns {Promise} Resume details
      */
-    getMy: () => {
-      return httpClient.get('/resumes');
+    getById: (resumeId) => {
+      return httpClient.get(`/resumes/${resumeId}`);
     },
 
     /**
-     * Create/Update online resume
+     * Create new resume
      * @param {Object} resumeData - Resume data
-     * @returns {Promise} Resume response
+     * @returns {Promise} Created resume
      */
-    createOrUpdate: (resumeData) => {
+    create: (resumeData) => {
       return httpClient.post('/resumes', resumeData);
+    },
+
+    /**
+     * Update existing resume
+     * @param {string} resumeId - Resume ID
+     * @param {Object} resumeData - Updated resume data
+     * @returns {Promise} Updated resume
+     */
+    update: (resumeId, resumeData) => {
+      return httpClient.put(`/resumes/${resumeId}`, resumeData);
     },
 
     /**
@@ -270,14 +281,80 @@ const API = {
     },
 
     /**
-     * Download resume
+     * Clone resume
+     * @param {string} resumeId - Resume ID to clone
+     * @returns {Promise} Cloned resume
+     */
+    clone: (resumeId) => {
+      return httpClient.post(`/resumes/${resumeId}/clone`);
+    },
+
+    /**
+     * Download resume as PDF or JSON
      * @param {string} resumeId - Resume ID
+     * @param {string} format - Format (pdf, json)
      * @returns {Promise} Resume file
      */
-    download: (resumeId) => {
-      return httpClient.get(`/resumes/${resumeId}/download`, {
+    download: (resumeId, format = 'pdf') => {
+      return httpClient.get(`/resumes/${resumeId}/download?format=${format}`, {
         responseType: 'blob'
       });
+    },
+
+    /**
+     * Get resume preview
+     * @param {string} resumeId - Resume ID
+     * @returns {Promise} Resume preview image
+     */
+    preview: (resumeId) => {
+      return httpClient.get(`/resumes/${resumeId}/preview`, {
+        responseType: 'blob'
+      });
+    },
+
+    /**
+     * Upload and parse resume file
+     * @param {FormData} formData - Resume file data
+     * @param {Function} onUploadProgress - Upload progress callback
+     * @returns {Promise} Parsed resume data
+     */
+    uploadAndParse: (formData, onUploadProgress = null) => {
+      return httpClient.upload('/resumes/upload-parse', formData, onUploadProgress);
+    },
+
+    /**
+     * Get public resumes
+     * @param {Object} params - Query parameters (skills, location, etc.)
+     * @returns {Promise} Public resumes
+     */
+    getPublic: (params = {}) => {
+      const queryString = new URLSearchParams(params).toString();
+      return httpClient.get(`/resumes/public?${queryString}`);
+    },
+
+    /**
+     * Get resume templates
+     * @returns {Promise} Available templates
+     */
+    getTemplates: () => {
+      return httpClient.get('/resumes/templates');
+    },
+
+    // Backward compatibility methods
+    getMy: (params = {}) => {
+      return API.resumes.getAll(params);
+    },
+
+    createOrUpdate: (resumeData) => {
+      if (resumeData.id) {
+        return API.resumes.update(resumeData.id, resumeData);
+      } else {
+        return API.resumes.create(resumeData);
+      }
+    },
+
+    upload: (formData, onUploadProgress = null) => {
+      return API.resumes.uploadAndParse(formData, onUploadProgress);
     }
   },
 
