@@ -1,4 +1,4 @@
-const Resume = require('../models/Resume');
+const Resume = require('../models/ResumePostgreSQL');
 const { pdfGenerator } = require('../services/pdfGenerator');
 const { resumeParser } = require('../services/resumeParser');
 const { uploadHelpers } = require('../config/aws');
@@ -9,28 +9,25 @@ const path = require('path');
 // @access  Private
 const createResume = async (req, res, next) => {
     try {
-        // For now, return a mock success response since we're using PostgreSQL
-        // This can be implemented when the resumes table is properly set up
-        const mockResume = {
-            id: Math.floor(Math.random() * 10000),
-            title: req.body.title || 'New Resume',
-            template: req.body.template || 'modern',
-            status: 'draft',
+        const resumeData = {
+            ...req.body,
+            user_id: req.user.id,
             personalInfo: {
-                firstName: req.user.firstName || '',
-                lastName: req.user.lastName || '',
-                email: req.user.email || '',
-                phone: req.user.phone || ''
-            },
-            createdAt: new Date(),
-            lastUpdated: new Date()
+                firstName: req.user.firstName || req.body.personalInfo?.firstName || '',
+                lastName: req.user.lastName || req.body.personalInfo?.lastName || '',
+                email: req.user.email || req.body.personalInfo?.email || '',
+                phone: req.user.phone || req.body.personalInfo?.phone || ''
+            }
         };
+
+        const resumeModel = new Resume();
+        const newResume = await resumeModel.createResume(resumeData);
 
         res.status(201).json({
             success: true,
             message: 'Resume created successfully',
             data: {
-                resume: mockResume
+                resume: newResume
             }
         });
 
@@ -44,19 +41,30 @@ const createResume = async (req, res, next) => {
 // @access  Private
 const getUserResumes = async (req, res, next) => {
     try {
-        // For now, return empty resumes list since we're using PostgreSQL
-        // This can be implemented when the resumes table is properly set up
+        const userId = req.user.id;
+        const { page = 1, limit = 10, orderBy } = req.query;
+        
+        const resumeModel = new Resume();
+        const options = {
+            limit: parseInt(limit),
+            offset: (page - 1) * limit,
+            orderBy: orderBy || 'r.updated_at DESC'
+        };
+        
+        const userResumes = await resumeModel.getResumesByUser(userId, options);
+        const totalCount = await resumeModel.getResumeCountByUser(userId);
+        
         res.status(200).json({
             success: true,
-            count: 0,
-            total: 0,
+            count: userResumes.length,
+            total: totalCount,
             pagination: {
-                page: 1,
-                pages: 0,
-                limit: 10
+                page: parseInt(page),
+                pages: Math.ceil(totalCount / limit),
+                limit: parseInt(limit)
             },
             data: {
-                resumes: []
+                resumes: userResumes
             }
         });
 
@@ -70,7 +78,11 @@ const getUserResumes = async (req, res, next) => {
 // @access  Private
 const getResume = async (req, res, next) => {
     try {
-        const resume = await Resume.findById(req.params.id);
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        const resumeModel = new Resume();
+        const resume = await resumeModel.getResumeById(id);
 
         if (!resume) {
             return res.status(404).json({
@@ -80,7 +92,7 @@ const getResume = async (req, res, next) => {
         }
 
         // Check ownership or if resume is public
-        if (resume.user.toString() !== req.user.id && !resume.isPublic) {
+        if (resume.user_id !== userId && !resume.is_public) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to view this resume'
@@ -90,10 +102,7 @@ const getResume = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: {
-                resume: {
-                    ...resume.toObject(),
-                    statistics: resume.getStatistics()
-                }
+                resume
             }
         });
 
@@ -107,37 +116,36 @@ const getResume = async (req, res, next) => {
 // @access  Private
 const updateResume = async (req, res, next) => {
     try {
-        let resume = await Resume.findById(req.params.id);
-
-        if (!resume) {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const updateData = req.body;
+        
+        const resumeModel = new Resume();
+        
+        // Check if resume exists and user owns it
+        const existingResume = await resumeModel.getResumeById(id);
+        if (!existingResume) {
             return res.status(404).json({
                 success: false,
                 message: 'Resume not found'
             });
         }
-
-        // Check ownership
-        if (resume.user.toString() !== req.user.id) {
+        
+        if (existingResume.user_id !== userId) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to update this resume'
             });
         }
-
-        resume = await Resume.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
+        
+        // Update resume
+        const updatedResume = await resumeModel.updateResume(id, updateData);
 
         res.status(200).json({
             success: true,
             message: 'Resume updated successfully',
             data: {
-                resume
+                resume: updatedResume
             }
         });
 
@@ -151,17 +159,21 @@ const updateResume = async (req, res, next) => {
 // @access  Private
 const deleteResume = async (req, res, next) => {
     try {
-        const resume = await Resume.findById(req.params.id);
-
-        if (!resume) {
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        const resumeModel = new Resume();
+        
+        // Check if resume exists and user owns it
+        const existingResume = await resumeModel.getResumeById(id);
+        if (!existingResume) {
             return res.status(404).json({
                 success: false,
                 message: 'Resume not found'
             });
         }
-
-        // Check ownership
-        if (resume.user.toString() !== req.user.id) {
+        
+        if (existingResume.user_id !== userId) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to delete this resume'
@@ -169,16 +181,17 @@ const deleteResume = async (req, res, next) => {
         }
 
         // Delete associated files if any
-        if (resume.uploadedFile?.url) {
+        if (existingResume.uploaded_file?.url) {
             try {
-                const fileKey = resume.uploadedFile.url.split('/').pop();
+                const fileKey = existingResume.uploaded_file.url.split('/').pop();
                 await uploadHelpers.deleteFromS3(fileKey);
             } catch (fileError) {
                 console.log('Error deleting file:', fileError.message);
             }
         }
 
-        await Resume.findByIdAndDelete(req.params.id);
+        // Delete resume
+        await resumeModel.deleteResume(id);
 
         res.status(200).json({
             success: true,
@@ -196,7 +209,11 @@ const deleteResume = async (req, res, next) => {
 const downloadResume = async (req, res, next) => {
     try {
         const { format = 'pdf' } = req.query;
-        const resume = await Resume.findById(req.params.id).populate('user', 'firstName lastName');
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        const resumeModel = new Resume();
+        const resume = await resumeModel.getResumeById(id);
 
         if (!resume) {
             return res.status(404).json({
@@ -206,7 +223,7 @@ const downloadResume = async (req, res, next) => {
         }
 
         // Check ownership or if resume is public
-        if (resume.user._id.toString() !== req.user.id && !resume.isPublic) {
+        if (resume.user_id !== userId && !resume.is_public) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to download this resume'
@@ -214,16 +231,17 @@ const downloadResume = async (req, res, next) => {
         }
 
         // Update download count and last downloaded date
-        resume.downloadCount += 1;
-        resume.lastDownloaded = new Date();
-        await resume.save();
+        if (resume.user_id !== userId && resume.is_public) {
+            await resumeModel.incrementDownloadCount(id);
+        }
 
         if (format === 'pdf') {
             // Generate PDF
-            const resumeData = resume.exportForPDF();
-            const pdfBuffer = await pdfGenerator.generateResumePDF(resumeData);
+            const pdfBuffer = await pdfGenerator.generateResumePDF(resume);
 
-            const fileName = `${resume.personalInfo.firstName}_${resume.personalInfo.lastName}_Resume.pdf`;
+            const firstName = resume.personal_info?.firstName || 'Resume';
+            const lastName = resume.personal_info?.lastName || '';
+            const fileName = `${firstName}_${lastName}_Resume.pdf`.replace(/\s+/g, '_');
             
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
@@ -233,14 +251,16 @@ const downloadResume = async (req, res, next) => {
 
         } else if (format === 'json') {
             // Return JSON data
-            const fileName = `${resume.personalInfo.firstName}_${resume.personalInfo.lastName}_Resume.json`;
+            const firstName = resume.personal_info?.firstName || 'Resume';
+            const lastName = resume.personal_info?.lastName || '';
+            const fileName = `${firstName}_${lastName}_Resume.json`.replace(/\s+/g, '_');
             
             res.setHeader('Content-Type', 'application/json');
             res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
             
             res.json({
                 success: true,
-                data: resume.exportForPDF()
+                data: resume
             });
 
         } else {
@@ -260,7 +280,11 @@ const downloadResume = async (req, res, next) => {
 // @access  Private
 const getResumePreview = async (req, res, next) => {
     try {
-        const resume = await Resume.findById(req.params.id);
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        const resumeModel = new Resume();
+        const resume = await resumeModel.getResumeById(id);
 
         if (!resume) {
             return res.status(404).json({
@@ -270,7 +294,7 @@ const getResumePreview = async (req, res, next) => {
         }
 
         // Check ownership or if resume is public
-        if (resume.user.toString() !== req.user.id && !resume.isPublic) {
+        if (resume.user_id !== userId && !resume.is_public) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to preview this resume'
@@ -278,8 +302,7 @@ const getResumePreview = async (req, res, next) => {
         }
 
         // Generate preview image
-        const resumeData = resume.exportForPDF();
-        const previewBuffer = await pdfGenerator.generatePreview(resumeData);
+        const previewBuffer = await pdfGenerator.generatePreview(resume);
 
         res.setHeader('Content-Type', 'image/png');
         res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
@@ -317,7 +340,7 @@ const uploadAndParseResume = async (req, res, next) => {
         // Create resume from parsed data
         const parsedData = parseResult.data;
         const resumeData = {
-            user: req.user.id,
+            user_id: req.user.id,
             title: `Parsed from ${req.file.originalname}`,
             personalInfo: {
                 firstName: parsedData.personalInfo.name?.split(' ')[0] || req.user.firstName,
@@ -326,15 +349,11 @@ const uploadAndParseResume = async (req, res, next) => {
                 phone: parsedData.personalInfo.phone || req.user.phone
             },
             summary: parsedData.summary,
-            skills: {
-                technical: parsedData.skills.map(skill => ({
-                    name: skill,
-                    level: 'intermediate'
-                })),
-                soft: [],
-                languages: []
-            },
-            parsedData: {
+            skills: parsedData.skills.map(skill => ({
+                name: skill,
+                level: 'intermediate'
+            })),
+            parsed_data: {
                 rawText: parsedData.rawText,
                 extractedSkills: parsedData.skills,
                 extractedExperience: parsedData.experience.totalYears,
@@ -342,7 +361,7 @@ const uploadAndParseResume = async (req, res, next) => {
                 extractedEducation: parsedData.education.map(edu => edu.degree),
                 confidence: parsedData.confidence
             },
-            uploadedFile: {
+            uploaded_file: {
                 filename: req.file.filename,
                 originalName: req.file.originalname,
                 mimeType: req.file.mimetype,
@@ -353,7 +372,8 @@ const uploadAndParseResume = async (req, res, next) => {
             status: 'draft'
         };
 
-        const resume = await Resume.create(resumeData);
+        const resumeModel = new Resume();
+        const resume = await resumeModel.createResume(resumeData);
 
         res.status(201).json({
             success: true,
@@ -387,14 +407,18 @@ const getPublicResumes = async (req, res, next) => {
 
         const filters = {
             skills: skills ? skills.split(',') : undefined,
-            experience: experience ? parseInt(experience) : undefined,
             location,
-            page,
-            limit
+            limit: parseInt(limit),
+            offset: (parseInt(page) - 1) * parseInt(limit)
         };
 
-        const resumes = await Resume.findPublicResumes(filters);
-        const total = await Resume.countDocuments({ isPublic: true, status: 'active' });
+        const resumeModel = new Resume();
+        const resumes = await resumeModel.getPublicResumes(filters);
+        
+        // For total count, we'll use a simple count query
+        const totalQuery = `SELECT COUNT(*) FROM resumes WHERE is_public = true AND status = 'completed'`;
+        const totalResult = await resumeModel.query(totalQuery);
+        const total = parseInt(totalResult.rows[0].count);
 
         res.status(200).json({
             success: true,
@@ -407,19 +431,21 @@ const getPublicResumes = async (req, res, next) => {
             },
             data: {
                 resumes: resumes.map(resume => ({
-                    id: resume._id,
+                    id: resume.id,
                     title: resume.title,
                     personalInfo: {
-                        firstName: resume.personalInfo.firstName,
-                        lastName: resume.personalInfo.lastName,
-                        location: resume.personalInfo.location
+                        firstName: resume.personal_info?.firstName,
+                        lastName: resume.personal_info?.lastName,
+                        location: resume.personal_info?.location
                     },
                     summary: resume.summary,
                     skills: resume.skills,
-                    totalExperience: resume.totalExperience,
                     template: resume.template,
-                    user: resume.user,
-                    updatedAt: resume.updatedAt
+                    user: {
+                        firstName: resume.first_name,
+                        lastName: resume.last_name
+                    },
+                    updatedAt: resume.updated_at
                 }))
             }
         });
@@ -434,7 +460,11 @@ const getPublicResumes = async (req, res, next) => {
 // @access  Private
 const cloneResume = async (req, res, next) => {
     try {
-        const originalResume = await Resume.findById(req.params.id);
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        const resumeModel = new Resume();
+        const originalResume = await resumeModel.getResumeById(id);
 
         if (!originalResume) {
             return res.status(404).json({
@@ -444,29 +474,15 @@ const cloneResume = async (req, res, next) => {
         }
 
         // Check if user can clone this resume (own resume or public resume)
-        if (originalResume.user.toString() !== req.user.id && !originalResume.isPublic) {
+        if (originalResume.user_id !== userId && !originalResume.is_public) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to clone this resume'
             });
         }
 
-        // Create clone
-        const resumeData = originalResume.toObject();
-        delete resumeData._id;
-        delete resumeData.createdAt;
-        delete resumeData.updatedAt;
-        delete resumeData.__v;
-        delete resumeData.uploadedFile; // Don't copy uploaded file reference
-
-        resumeData.user = req.user.id;
-        resumeData.title = `Copy of ${resumeData.title}`;
-        resumeData.status = 'draft';
-        resumeData.isPublic = false;
-        resumeData.downloadCount = 0;
-        resumeData.lastDownloaded = undefined;
-
-        const clonedResume = await Resume.create(resumeData);
+        // Clone resume using the model method
+        const clonedResume = await resumeModel.cloneResume(id, userId);
 
         res.status(201).json({
             success: true,

@@ -239,6 +239,46 @@ async function setupDatabase(closePool = false) {
             console.log('✅ Applications table created successfully');
         }
 
+        // Check if resumes table exists and create if needed
+        if (!tables.includes('resumes')) {
+            console.log('🔧 Creating resumes table...');
+            const createResumesTable = `
+                CREATE TABLE resumes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    title VARCHAR(255) NOT NULL,
+                    template VARCHAR(50) DEFAULT 'modern',
+                    status VARCHAR(50) DEFAULT 'draft' CHECK (status IN ('draft', 'completed', 'archived')),
+                    personal_info JSONB,
+                    summary TEXT,
+                    experience JSONB,
+                    education JSONB,
+                    skills JSONB,
+                    projects JSONB,
+                    certifications JSONB,
+                    languages JSONB,
+                    custom_sections JSONB,
+                    settings JSONB,
+                    is_public BOOLEAN DEFAULT FALSE,
+                    download_count INTEGER DEFAULT 0,
+                    last_downloaded TIMESTAMP,
+                    uploaded_file JSONB,
+                    parsed_data JSONB,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE INDEX idx_resumes_user ON resumes(user_id);
+                CREATE INDEX idx_resumes_status ON resumes(status);
+                CREATE INDEX idx_resumes_template ON resumes(template);
+                CREATE INDEX idx_resumes_public ON resumes(is_public);
+                CREATE INDEX idx_resumes_created ON resumes(created_at);
+            `;
+            
+            await pool.query(createResumesTable);
+            console.log('✅ Resumes table created successfully');
+        }
+
         console.log('🎉 Database setup completed successfully');
 
     } catch (error) {
